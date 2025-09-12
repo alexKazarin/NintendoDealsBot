@@ -123,7 +123,7 @@ class PriceChecker:
                  current_price_cents < wishlist_item.last_notified_price_cents)):
 
                 should_notify = True
-                notification_reason = f"Цена опустилась до ${current_price_cents/100:.2f} (желаемая: ${wishlist_item.desired_price_cents/100:.2f})"
+                notification_reason = f"Price dropped to ${current_price_cents/100:.2f} (desired: ${wishlist_item.desired_price_cents/100:.2f})"
 
             # Check minimum discount (if implemented)
             # This could be added later based on game history
@@ -151,11 +151,11 @@ class PriceChecker:
 
         try:
             message_text = (
-                f"🎉 <b>Скидка на игру!</b>\n\n"
+                f"🎉 <b>Game discount!</b>\n\n"
                 f"🎮 <b>{game.title}</b>\n"
-                f"💰 Новая цена: ${price_cents/100:.2f}\n"
+                f"💰 New price: ${price_cents/100:.2f}\n"
                 f"📊 {reason}\n\n"
-                f"🔗 Проверить на DekuDeals: https://www.dekudeals.com/items/{game.source_id}"
+                f"🔗 Check on DekuDeals: https://www.dekudeals.com/items/{game.source_id}"
             )
 
             await self.bot.send_message(

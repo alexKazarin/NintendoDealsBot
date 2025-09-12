@@ -47,19 +47,19 @@ async def cmd_start(message: Message):
         db.refresh(user)
 
     welcome_text = (
-        "🎮 <b>Добро пожаловать в Nintendo Deals Bot!</b>\n\n"
-        "Я помогу вам отслеживать скидки на игры Nintendo Switch.\n\n"
-        "📋 <b>Основные команды:</b>\n"
-        "/add <название игры> - добавить игру в виш-лист\n"
-        "/list - показать ваш виш-лист\n"
-        "/remove <номер> - удалить игру из виш-листа\n"
-        "/setthreshold <цена> - установить порог цены для уведомлений\n"
-        "/region <регион> - изменить регион (us, eu, jp)\n"
-        "/help - показать эту справку\n\n"
-        "💎 <b>Премиум возможности:</b>\n"
-        "/subscribe - оформить премиум подписку\n"
-        "/donate - поддержать проект\n\n"
-        f"Ваш ID: {user_id}"
+        "🎮 <b>Welcome to Nintendo Deals Bot!</b>\n\n"
+        "I'll help you track discounts on Nintendo Switch games.\n\n"
+        "📋 <b>Main commands:</b>\n"
+        "/add <game name> - add game to wishlist\n"
+        "/list - show your wishlist\n"
+        "/remove <number> - remove game from wishlist\n"
+        "/setthreshold <price> - set price threshold for notifications\n"
+        "/region <region> - change region (us, eu, jp)\n"
+        "/help - show this help\n\n"
+        "💎 <b>Premium features:</b>\n"
+        "/subscribe - get premium subscription\n"
+        "/donate - support the project\n\n"
+        f"Your ID: {user_id}"
     )
 
     await message.reply(welcome_text)
@@ -68,21 +68,21 @@ async def cmd_start(message: Message):
 async def cmd_help(message: Message):
     """Handle /help command"""
     help_text = (
-        "🎮 <b>Nintendo Deals Bot - Справка</b>\n\n"
-        "📋 <b>Команды:</b>\n"
-        "/start - начать работу с ботом\n"
-        "/add <название игры> - добавить игру в виш-лист\n"
-        "/list - показать список отслеживаемых игр\n"
-        "/remove <номер> - удалить игру из виш-листа\n"
-        "/setthreshold <цена> - установить желаемую цену\n"
-        "/region <регион> - изменить регион (us/eu/jp)\n"
-        "/subscribe - премиум подписка (до 100 игр)\n"
-        "/donate - поддержать разработку\n\n"
-        "💡 <b>Как пользоваться:</b>\n"
-        "1. Добавьте игру командой /add\n"
-        "2. Установите желаемую цену /setthreshold\n"
-        "3. Получайте уведомления о скидках!\n\n"
-        "🔗 Бесплатно: до 10 игр в виш-листе"
+        "🎮 <b>Nintendo Deals Bot - Help</b>\n\n"
+        "📋 <b>Commands:</b>\n"
+        "/start - start using the bot\n"
+        "/add <game name> - add game to wishlist\n"
+        "/list - show tracked games list\n"
+        "/remove <number> - remove game from wishlist\n"
+        "/setthreshold <price> - set desired price\n"
+        "/region <region> - change region (us/eu/jp)\n"
+        "/subscribe - premium subscription (up to 100 games)\n"
+        "/donate - support development\n\n"
+        "💡 <b>How to use:</b>\n"
+        "1. Add a game using /add command\n"
+        "2. Set desired price with /setthreshold\n"
+        "3. Get discount notifications!\n\n"
+        "🔗 Free: up to 10 games in wishlist"
     )
 
     await message.reply(help_text)
@@ -94,12 +94,12 @@ async def cmd_region(message: Message):
     user_id = message.from_user.id
 
     if not args:
-        await message.reply("Укажите регион: /region us|eu|jp")
+        await message.reply("Specify region: /region us|eu|jp")
         return
 
     region = args[0].lower()
     if region not in ['us', 'eu', 'jp']:
-        await message.reply("Неверный регион. Доступные: us, eu, jp")
+        await message.reply("Invalid region. Available: us, eu, jp")
         return
 
     db = next(get_db())
@@ -107,9 +107,9 @@ async def cmd_region(message: Message):
     if user:
         user.region = region
         db.commit()
-        await message.reply(f"✅ Регион изменен на: {region.upper()}")
+        await message.reply(f"✅ Region changed to: {region.upper()}")
     else:
-        await message.reply("❌ Пользователь не найден")
+        await message.reply("❌ User not found")
 
 @dp.message(Command("subscribe"))
 async def cmd_subscribe(message: Message):
@@ -120,7 +120,7 @@ async def cmd_subscribe(message: Message):
     user = db.query(User).filter(User.telegram_id == user_id).first()
 
     if user and user.is_premium:
-        await message.reply("✅ У вас уже есть премиум подписка!")
+        await message.reply("✅ You already have premium subscription!")
         return
 
     # In MVP, we'll just set premium for demo purposes
@@ -129,24 +129,24 @@ async def cmd_subscribe(message: Message):
         user.is_premium = True
         db.commit()
         await message.reply(
-            "🎉 <b>Премиум подписка активирована!</b>\n\n"
-            "Теперь вы можете отслеживать до 100 игр!\n"
-            "Спасибо за поддержку! 💎"
+            "🎉 <b>Premium subscription activated!</b>\n\n"
+            "Now you can track up to 100 games!\n"
+            "Thank you for your support! 💎"
         )
     else:
-        await message.reply("❌ Пользователь не найден")
+        await message.reply("❌ User not found")
 
 @dp.message(Command("donate"))
 async def cmd_donate(message: Message):
     """Handle /donate command"""
     donate_text = (
-        "💝 <b>Поддержать проект</b>\n\n"
-        "Ваш вклад помогает развивать бота!\n\n"
-        "💳 <b>Способы поддержки:</b>\n"
-        "• Telegram Stars: отправьте звезды боту\n"
-        "• Криптовалюта: скоро добавим\n"
-        "• PayPal: ссылка будет позже\n\n"
-        "Спасибо за поддержку! 🙏"
+        "💝 <b>Support the project</b>\n\n"
+        "Your contribution helps develop the bot!\n\n"
+        "💳 <b>Support methods:</b>\n"
+        "• Telegram Stars: send stars to the bot\n"
+        "• Cryptocurrency: coming soon\n"
+        "• PayPal: link will be later\n\n"
+        "Thank you for your support! 🙏"
     )
 
     await message.reply(donate_text)
@@ -158,7 +158,7 @@ async def cmd_add(message: Message):
     user_id = message.from_user.id
 
     if not args:
-        await message.reply("Укажите название игры: /add <название игры>")
+        await message.reply("Specify game name: /add <game name>")
         return
 
     query = " ".join(args)
@@ -167,7 +167,7 @@ async def cmd_add(message: Message):
     # Get user
     user = db.query(User).filter(User.telegram_id == user_id).first()
     if not user:
-        await message.reply("❌ Пользователь не найден. Используйте /start")
+        await message.reply("❌ User not found. Use /start")
         return
 
     # Check wishlist limit
@@ -176,28 +176,28 @@ async def cmd_add(message: Message):
 
     if wishlist_count >= max_games:
         await message.reply(
-            f"❌ Достигнут лимит игр в виш-листе ({max_games}).\n"
-            "Оформите премиум подписку командой /subscribe для увеличения лимита до 100 игр."
+            f"❌ Wishlist limit reached ({max_games}).\n"
+            "Get premium subscription with /subscribe to increase limit to 100 games."
         )
         return
 
     # Search for games
-    await message.reply("🔍 Ищу игры...")
+    await message.reply("🔍 Searching for games...")
     games = price_provider.search_games(query, user.region)
 
     if not games:
-        await message.reply("❌ Игры не найдены. Попробуйте другое название.")
+        await message.reply("❌ No games found. Try a different name.")
         return
 
     # Show search results
-    response = "🎮 <b>Найденные игры:</b>\n\n"
+    response = "🎮 <b>Found games:</b>\n\n"
     for i, game in enumerate(games[:5], 1):  # Show top 5 results
-        price_text = f"${game['current_price']}" if game['current_price'] else "Цена не указана"
+        price_text = f"${game['current_price']}" if game['current_price'] else "Price not specified"
         discount_text = f" (-{game['discount_percent']}%)" if game['discount_percent'] else ""
         response += f"{i}. {game['title']}\n   💰 {price_text}{discount_text}\n\n"
 
-    response += "📝 <b>Выберите номер игры для добавления:</b>\n"
-    response += "Ответьте номером (1-5) или 'отмена' для отмены."
+    response += "📝 <b>Select game number to add:</b>\n"
+    response += "Reply with number (1-5) or 'cancel' to cancel."
 
     # Store search results and user state
     search_results[user_id] = games[:5]
@@ -212,7 +212,7 @@ async def cmd_list(message: Message):
 
     user = db.query(User).filter(User.telegram_id == user_id).first()
     if not user:
-        await message.reply("❌ Пользователь не найден. Используйте /start")
+        await message.reply("❌ User not found. Use /start")
         return
 
     # Get user's wishlist with game info
@@ -224,16 +224,16 @@ async def cmd_list(message: Message):
     )
 
     if not wishlist_items:
-        await message.reply("📝 Ваш виш-лист пуст.\n\nИспользуйте /add <название игры> для добавления игр.")
+        await message.reply("📝 Your wishlist is empty.\n\nUse /add <game name> to add games.")
         return
 
-    response = "📋 <b>Ваш виш-лист:</b>\n\n"
+    response = "📋 <b>Your wishlist:</b>\n\n"
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
-        price_text = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "Цена не проверена"
-        threshold_text = f" (желаемая: ${wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
+        price_text = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "Price not checked"
+        threshold_text = f" (desired: ${wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
         response += f"{i}. {game.title}\n   💰 {price_text}{threshold_text}\n\n"
 
-    response += "💡 Используйте /remove <номер> для удаления игры"
+    response += "💡 Use /remove <number> to remove a game"
     await message.reply(response)
 
 @dp.message(Command("remove"))
@@ -243,19 +243,19 @@ async def cmd_remove(message: Message):
     user_id = message.from_user.id
 
     if not args:
-        await message.reply("Укажите номер игры: /remove <номер>")
+        await message.reply("Specify game number: /remove <number>")
         return
 
     try:
         game_number = int(args[0]) - 1  # Convert to 0-based index
     except ValueError:
-        await message.reply("❌ Неверный номер. Укажите число.")
+        await message.reply("❌ Invalid number. Specify a number.")
         return
 
     db = next(get_db())
     user = db.query(User).filter(User.telegram_id == user_id).first()
     if not user:
-        await message.reply("❌ Пользователь не найден. Используйте /start")
+        await message.reply("❌ User not found. Use /start")
         return
 
     # Get user's wishlist
@@ -266,7 +266,7 @@ async def cmd_remove(message: Message):
     )
 
     if game_number < 0 or game_number >= len(wishlist_items):
-        await message.reply("❌ Неверный номер игры.")
+        await message.reply("❌ Invalid game number.")
         return
 
     # Remove the game
@@ -274,7 +274,7 @@ async def cmd_remove(message: Message):
     db.delete(item_to_remove)
     db.commit()
 
-    await message.reply("✅ Игра удалена из виш-листа!")
+    await message.reply("✅ Game removed from wishlist!")
 
 @dp.message(Command("setthreshold"))
 async def cmd_setthreshold(message: Message):
@@ -283,7 +283,7 @@ async def cmd_setthreshold(message: Message):
     user_id = message.from_user.id
 
     if not args:
-        await message.reply("Укажите желаемую цену: /setthreshold <цена в долларах>")
+        await message.reply("Specify desired price: /setthreshold <price in dollars>")
         return
 
     try:
@@ -291,13 +291,13 @@ async def cmd_setthreshold(message: Message):
         if price <= 0:
             raise ValueError
     except ValueError:
-        await message.reply("❌ Неверная цена. Укажите положительное число.")
+        await message.reply("❌ Invalid price. Specify a positive number.")
         return
 
     db = next(get_db())
     user = db.query(User).filter(User.telegram_id == user_id).first()
     if not user:
-        await message.reply("❌ Пользователь не найден. Используйте /start")
+        await message.reply("❌ User not found. Use /start")
         return
 
     # Get user's wishlist
@@ -309,17 +309,17 @@ async def cmd_setthreshold(message: Message):
     )
 
     if not wishlist_items:
-        await message.reply("📝 Ваш виш-лист пуст.\n\nСначала добавьте игры командой /add")
+        await message.reply("📝 Your wishlist is empty.\n\nAdd games first using /add command")
         return
 
     # Show games to choose from
-    response = "🎯 <b>Выберите игру для установки порога цены:</b>\n\n"
+    response = "🎯 <b>Select game to set price threshold:</b>\n\n"
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
-        current_price = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "не проверена"
-        response += f"{i}. {game.title} (текущая: {current_price})\n"
+        current_price = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "not checked"
+        response += f"{i}. {game.title} (current: {current_price})\n"
 
-    response += f"\n💰 Желаемая цена: ${price:.2f}\n"
-    response += "Ответьте номером игры или 'отмена'."
+    response += f"\n💰 Desired price: ${price:.2f}\n"
+    response += "Reply with game number or 'cancel'."
 
     # Store user state
     user_states[user_id] = {'action': 'set_threshold', 'price': price}
@@ -338,9 +338,9 @@ async def handle_text_messages(message: Message):
 
     # Handle game selection from search results
     if user_id in user_states and user_states[user_id].get('action') == 'select_game':
-        if text == 'отмена':
+        if text == 'cancel':
             del user_states[user_id]
-            await message.reply("❌ Добавление игры отменено.")
+            await message.reply("❌ Game addition cancelled.")
             return
 
         try:
@@ -348,17 +348,17 @@ async def handle_text_messages(message: Message):
             if choice < 1 or choice > 5:
                 raise ValueError
         except ValueError:
-            await message.reply("❌ Укажите число от 1 до 5 или 'отмена'.")
+            await message.reply("❌ Specify number from 1 to 5 or 'cancel'.")
             return
 
         # Get search results
         if user_id not in search_results:
-            await message.reply("❌ Результаты поиска устарели. Попробуйте поиск заново.")
+            await message.reply("❌ Search results expired. Try searching again.")
             return
 
         games = search_results[user_id]
         if choice > len(games):
-            await message.reply("❌ Неверный номер игры.")
+            await message.reply("❌ Invalid game number.")
             return
 
         selected_game = games[choice - 1]
@@ -372,7 +372,7 @@ async def handle_text_messages(message: Message):
                 UserWishlist.game_id == existing_game.id
             ).first()
             if existing_wishlist:
-                await message.reply("❌ Эта игра уже в вашем виш-листе!")
+                await message.reply("❌ This game is already in your wishlist!")
                 del user_states[user_id]
                 del search_results[user_id]
                 return
@@ -403,16 +403,16 @@ async def handle_text_messages(message: Message):
         del search_results[user_id]
 
         await message.reply(
-            f"✅ <b>{selected_game['title']}</b> добавлена в ваш виш-лист!\n\n"
-            "Используйте /setthreshold для установки желаемой цены."
+            f"✅ <b>{selected_game['title']}</b> added to your wishlist!\n\n"
+            "Use /setthreshold to set desired price."
         )
         return
 
     # Handle threshold setting
     elif user_id in user_states and user_states[user_id].get('action') == 'set_threshold':
-        if text == 'отмена':
+        if text == 'cancel':
             del user_states[user_id]
-            await message.reply("❌ Установка порога отменена.")
+            await message.reply("❌ Threshold setting cancelled.")
             return
 
         try:
@@ -420,7 +420,7 @@ async def handle_text_messages(message: Message):
             if choice < 1:
                 raise ValueError
         except ValueError:
-            await message.reply("❌ Укажите номер игры или 'отмена'.")
+            await message.reply("❌ Specify game number or 'cancel'.")
             return
 
         # Get wishlist items
@@ -432,7 +432,7 @@ async def handle_text_messages(message: Message):
         )
 
         if choice > len(wishlist_items):
-            await message.reply("❌ Неверный номер игры.")
+            await message.reply("❌ Invalid game number.")
             return
 
         wishlist_item, game = wishlist_items[choice - 1]
@@ -445,8 +445,8 @@ async def handle_text_messages(message: Message):
         del user_states[user_id]
 
         await message.reply(
-            f"✅ Порог цены для <b>{game.title}</b> установлен: ${threshold_price:.2f}\n\n"
-            "Вы получите уведомление, когда цена опустится ниже этого значения!"
+            f"✅ Price threshold for <b>{game.title}</b> set: ${threshold_price:.2f}\n\n"
+            "You'll receive notification when price drops below this value!"
         )
         return
 
