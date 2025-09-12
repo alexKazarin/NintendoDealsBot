@@ -29,18 +29,26 @@ Telegram bot for tracking Nintendo Switch game deals. Get notifications about pr
 
 ## 🛠 Installation and Setup
 
-### 1. Clone the repository
+### Local Development Setup
+
+#### 1. Clone the repository
 ```bash
 git clone <repository-url>
 cd NintendoDealsBot
 ```
 
-### 2. Install dependencies
+#### 2. Create virtual environment
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+#### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment variables
+#### 4. Configure environment variables
 
 Create a `.env` file and add your Telegram bot token:
 
@@ -50,26 +58,32 @@ DATABASE_URL=sqlite:///./nintendo_deals.db
 DEFAULT_REGION=us
 ```
 
-### 4. Create Telegram Bot
+#### 5. Create Telegram Bot
 
 1. Open [@BotFather](https://t.me/botfather) in Telegram
 2. Send `/newbot` command
 3. Follow the instructions to create your bot
 4. Copy the token and paste it in `.env`
 
-### 5. Initialize database
+#### 6. Initialize database
 ```bash
 python init_db.py
 ```
 
-### 6. Run the bot
+#### 7. Run the bot locally
 ```bash
 python main.py
 ```
 
-### 7. Testing
+#### 8. Testing
 ```bash
 python test_bot.py
+```
+
+### Quick Local Start (after setup)
+```bash
+source venv/bin/activate
+python main.py
 ```
 
 ## 🗄 Project Structure

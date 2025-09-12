@@ -172,6 +172,8 @@ For MVP, you can use free services to avoid costs:
 NintendoDealsBot/
 ├── main.py                 # Entry point with scheduler integration
 ├── test_bot.py            # Component testing system
+├── test_health.py         # Health check endpoint testing (FastAPI server)
+├── check_webhook.py       # Webhook status checker for Telegram API
 ├── init_db.py             # Database initialization script
 ├── requirements.txt       # Python dependencies (aiogram 3.3.0, SQLAlchemy 2.0.23, APScheduler 3.10.4)
 ├── .env                   # Environment variables
@@ -284,13 +286,27 @@ class PriceProvider(ABC):
 - Logging setup
 - Database initialization on startup
 
-#### 9.2.5 Testing System (test_bot.py)
+#### 9.2.5 Testing and Monitoring Tools
 
+**test_bot.py:**
 - Testing all module imports
 - DB table creation check
 - Price provider test (with graceful error handling)
 - BOT_TOKEN presence check
 - Test results report
+
+**test_health.py:**
+- FastAPI-based health check endpoint server
+- Provides `/health` endpoint for deployment platform monitoring
+- Useful for Render, Railway, and other cloud platforms
+- Simple async web server for health status verification
+
+**check_webhook.py:**
+- Telegram webhook status checker
+- Queries Telegram Bot API for webhook information
+- Helps diagnose webhook vs polling mode conflicts
+- Shows pending updates count and webhook URL status
+- Essential for troubleshooting deployment issues
 
 ### 9.3 Technical Solutions and Patterns
 
@@ -345,6 +361,16 @@ DEFAULT_REGION=us
 ```
 
 #### 9.5.2 Launch Process
+
+**Local Development Setup:**
+1. Create virtual environment: `python3 -m venv venv`
+2. Activate environment: `source venv/bin/activate`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Configure .env file with BOT_TOKEN
+5. Initialize database: `python init_db.py`
+6. Launch bot: `python main.py`
+
+**Production Launch:**
 1. `pip install -r requirements.txt`
 2. Configure .env file
 3. `python init_db.py` (create tables)
