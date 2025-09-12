@@ -7,11 +7,27 @@ import asyncio
 import logging
 import signal
 import sys
+import uvicorn
+from fastapi import FastAPI
 from bot.bot import main
 from bot.scheduler import price_checker
 
+# Create FastAPI app for health checks
+app = FastAPI(title="Nintendo Deals Bot", version="1.0.0")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Render"""
+    return {"status": "healthy", "service": "nintendo-deals-bot"}
+
+async def run_web_server():
+    """Run FastAPI web server for health checks"""
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
 async def main_with_scheduler():
-    """Main function that starts both bot and scheduler"""
+    """Main function that starts bot, scheduler and web server"""
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,
@@ -40,10 +56,14 @@ async def main_with_scheduler():
     signal.signal(signal.SIGTERM, signal_handler)
 
     try:
-        # Run the bot
-        await main()
+        # Run bot and web server concurrently
+        logger.info("Starting web server on port 8000...")
+        await asyncio.gather(
+            main(),          # Bot polling
+            run_web_server() # Health check server
+        )
     except Exception as e:
-        logger.error(f"Error running bot: {e}")
+        logger.error(f"Error running services: {e}")
     finally:
         # Stop scheduler on exit
         price_checker.stop()
