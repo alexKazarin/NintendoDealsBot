@@ -5,6 +5,7 @@ Nintendo Deals Bot - Main entry point
 
 import asyncio
 import logging
+import os
 import signal
 import sys
 import uvicorn
@@ -22,7 +23,8 @@ async def health_check():
 
 async def run_web_server():
     """Run FastAPI web server for health checks"""
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
+    port = int(os.getenv("PORT", 10000))  # Render uses PORT env var, default 10000
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
     server = uvicorn.Server(config)
     await server.serve()
 
@@ -57,7 +59,8 @@ async def main_with_scheduler():
 
     try:
         # Run bot and web server concurrently
-        logger.info("Starting web server on port 8000...")
+        port = int(os.getenv("PORT", 10000))
+        logger.info(f"Starting web server on port {port}...")
         await asyncio.gather(
             main(),          # Bot polling
             run_web_server() # Health check server
