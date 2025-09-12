@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from aiogram import Bot, Dispatcher
@@ -459,8 +460,20 @@ async def main():
     from models.models import Base
     Base.metadata.create_all(bind=engine)
 
-    # Start polling
-    await dp.start_polling(bot)
+    # Start polling with error handling for conflicts
+    while True:
+        try:
+            logger.info("Starting bot polling...")
+            await dp.start_polling(bot)
+            break  # Exit loop if polling succeeds
+        except Exception as e:
+            logger.error(f"Polling error: {e}")
+            if "Conflict" in str(e) or "terminated by other getUpdates" in str(e):
+                logger.warning("Conflict detected - another bot instance is running. Waiting before retry...")
+                await asyncio.sleep(30)  # Wait 30 seconds before retry
+            else:
+                logger.error("Non-conflict error, exiting...")
+                raise
 
 if __name__ == "__main__":
     import asyncio
