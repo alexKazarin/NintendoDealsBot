@@ -168,7 +168,7 @@ For MVP, you can use free services to avoid costs:
 
 ## 9. Implemented MVP
 
-### 9.1 Architecture and Project Structure
+### 9.1 Architecture and Project Structure (After Refactoring)
 
 ```
 NintendoDealsBot/
@@ -190,10 +190,24 @@ NintendoDealsBot/
 │   ├── __init__.py
 │   ├── base_provider.py  # Abstract base PriceProvider class
 │   └── deku_deals_provider.py  # DekuDeals implementation
-└── bot/                  # Bot business logic layer
+└── bot/                  # Bot business logic layer (refactored)
     ├── __init__.py
-    ├── bot.py            # Main command and handler logic
-    └── scheduler.py      # Background price check tasks
+    ├── bot.py            # Main initialization and entry point (81 lines)
+    ├── scheduler.py      # Background price check tasks
+    ├── handlers/         # Telegram event handlers
+    │   ├── __init__.py
+    │   ├── commands.py   # Command handlers (/start, /help, etc.) - 340 lines
+    │   ├── callbacks.py  # Inline button handlers - 547 lines
+    │   ├── messages.py   # Text message handlers - 242 lines
+    │   └── keyboards.py  # Keyboard layouts - 20 lines
+    ├── core/             # Business logic services
+    │   ├── __init__.py
+    │   ├── user_manager.py     # User management logic - 59 lines
+    │   ├── game_manager.py     # Game and wishlist logic - 137 lines
+    │   └── notification_manager.py # Notification logic - 166 lines
+    └── utils/            # Utilities and helpers
+        ├── __init__.py
+        └── helpers.py     # Helper functions - 84 lines
 ```
 
 ### 9.2 Detailed Component Implementation
@@ -451,7 +465,41 @@ DEFAULT_REGION=us
 - **Competition**: Unique features + data quality
 - **Monetization**: Freemium model + premium value
 
-### 9.9 Conclusion
+### 9.10 Refactoring Results
+
+**Refactoring completed on 13/09/2025** - Successfully broke down the monolithic `bot/bot.py` file (1000+ lines) into a modular architecture:
+
+#### Before Refactoring:
+- `bot/bot.py`: 1000+ lines (monolithic file with all handlers)
+
+#### After Refactoring:
+- `bot/bot.py`: 81 lines (main initialization and entry point)
+- `bot/handlers/commands.py`: 340 lines (all command handlers)
+- `bot/handlers/callbacks.py`: 547 lines (all inline button handlers)
+- `bot/handlers/messages.py`: 242 lines (text message handlers)
+- `bot/handlers/keyboards.py`: 20 lines (keyboard layouts)
+- `bot/core/user_manager.py`: 59 lines (user management business logic)
+- `bot/core/game_manager.py`: 137 lines (game and wishlist business logic)
+- `bot/core/notification_manager.py`: 166 lines (notification business logic)
+- `bot/utils/helpers.py`: 84 lines (utility functions)
+
+#### Benefits Achieved:
+- ✅ **Separation of Concerns**: Each module has a single responsibility
+- ✅ **Improved Maintainability**: Easy to locate and modify specific functionality
+- ✅ **Enhanced Testability**: Individual components can be tested in isolation
+- ✅ **Better Code Organization**: Logical grouping of related functions
+- ✅ **Scalability**: Easy to add new features without affecting existing code
+- ✅ **Code Reusability**: Business logic services can be used across different handlers
+
+#### Architecture Improvements:
+- **Handlers Layer**: Separated command, callback, and message handling
+- **Core Layer**: Business logic abstracted into dedicated service classes
+- **Utils Layer**: Common helper functions centralized
+- **Clean Interfaces**: Clear separation between presentation and business logic
+
+All tests pass successfully, and the bot maintains full functionality after refactoring.
+
+### 9.11 Conclusion
 
 MVP successfully implemented covering all main blueprint requirements. Architecture allows easy functionality expansion and system scaling. Code follows Python best practices with focus on readability, testability, and maintainability.
 
