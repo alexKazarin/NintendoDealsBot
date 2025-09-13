@@ -1,7 +1,10 @@
 import requests
+import logging
 from bs4 import BeautifulSoup
 from typing import Dict, List, Optional
 from .base_provider import PriceProvider
+
+logger = logging.getLogger(__name__)
 
 class DekuDealsProvider(PriceProvider):
     """Price provider implementation for DekuDeals"""
@@ -18,19 +21,37 @@ class DekuDealsProvider(PriceProvider):
 
     def search_games(self, query: str, region: str = "us") -> List[Dict]:
         """Search for games on DekuDeals"""
+        logger.info(f"Searching for games with query: '{query}', region: {region}")
+
         try:
             params = {'term': query}
+            url = f"{self.SEARCH_URL}?term={query}"
+            logger.info(f"Making request to: {url}")
+
             response = self.session.get(self.SEARCH_URL, params=params)
+            logger.info(f"Response status code: {response.status_code}")
+
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, 'html.parser')
             games = []
 
-            # Parse search results
-            game_items = soup.find_all('div', class_='item-grid-item')
+            # Parse search results - updated selectors for new site structure
+            game_containers = soup.find_all('div', class_='d-flex flex-column', style=lambda x: x and 'gap: 0.2rem' in x)
+            logger.info(f"Found {len(game_containers)} game containers on the page")
 
-            for item in game_items[:10]:  # Limit to 10 results
-                title_elem = item.find('a', class_='item-grid-item-name')
+            # Debug: print some HTML content to see structure
+            if len(game_containers) == 0:
+                logger.warning("No game containers found. Page structure might have changed.")
+                # Log first 2000 characters of response for debugging
+                logger.debug(f"Response content preview: {response.text[:2000]}")
+
+            # Filter games by query since search redirects to main page
+            filtered_games = []
+            query_lower = query.lower()
+
+            for container in game_containers[:50]:  # Check more games to find matches
+                title_elem = container.find('a', class_='main-link')
                 if not title_elem:
                     continue
 
@@ -38,27 +59,51 @@ class DekuDealsProvider(PriceProvider):
                 game_url = title_elem['href']
                 game_id = game_url.split('/')[-1]
 
-                # Get price info
-                price_elem = item.find('span', class_='price')
+                # Check if game title matches the search query
+                if query_lower not in title.lower():
+                    continue
+
+                logger.debug(f"Found matching game: {title} (ID: {game_id})")
+
+                # Get price info - look for price elements directly in container
                 current_price = None
                 original_price = None
                 discount = None
 
-                if price_elem:
-                    current_price_text = price_elem.find('span', class_='price-current')
-                    if current_price_text:
-                        current_price = self._parse_price(current_price_text.text.strip())
+                # Debug: log container HTML for price debugging
+                logger.debug(f"Container HTML preview: {str(container)[:500]}")
 
-                    original_price_elem = price_elem.find('span', class_='price-original')
-                    if original_price_elem:
-                        original_price = self._parse_price(original_price_elem.text.strip())
+                # Find current price (strong tag)
+                price_strong = container.find('strong')
+                if price_strong:
+                    price_text = price_strong.text.strip()
+                    logger.debug(f"Found strong tag with text: '{price_text}'")
+                    current_price = self._parse_price(price_text)
+                    logger.debug(f"Parsed current price: {current_price}")
+                else:
+                    logger.debug("No strong tag found in container")
 
-                    discount_elem = price_elem.find('span', class_='price-discount')
-                    if discount_elem:
-                        discount_text = discount_elem.text.strip()
-                        discount = int(discount_text.replace('%', '').replace('-', ''))
+                # Find original price (s tag with text-muted class)
+                original_price_elem = container.find('s', class_='text-muted')
+                if original_price_elem:
+                    original_text = original_price_elem.text.strip()
+                    logger.debug(f"Found s tag with text: '{original_text}'")
+                    original_price = self._parse_price(original_text)
+                    logger.debug(f"Parsed original price: {original_price}")
+                else:
+                    logger.debug("No s tag with text-muted class found in container")
 
-                games.append({
+                # Find discount percentage (badge-danger)
+                discount_elem = container.find('span', class_='badge-danger')
+                if discount_elem:
+                    discount_text = discount_elem.text.strip()
+                    logger.debug(f"Found badge-danger with text: '{discount_text}'")
+                    discount = int(discount_text.replace('%', '').replace('-', ''))
+                    logger.debug(f"Parsed discount: {discount}%")
+                else:
+                    logger.debug("No badge-danger span found in container")
+
+                filtered_games.append({
                     'id': game_id,
                     'title': title,
                     'current_price': current_price,
@@ -68,10 +113,15 @@ class DekuDealsProvider(PriceProvider):
                     'platform': 'switch'  # Assuming Nintendo Switch for MVP
                 })
 
-            return games
+                # Limit to 10 results
+                if len(filtered_games) >= 10:
+                    break
+
+            logger.info(f"Successfully found {len(filtered_games)} games matching query '{query}'")
+            return filtered_games
 
         except Exception as e:
-            print(f"Error searching games: {e}")
+            logger.error(f"Error searching games: {e}", exc_info=True)
             return []
 
     def get_game_info(self, game_id: str) -> Optional[Dict]:
@@ -115,8 +165,11 @@ class DekuDealsProvider(PriceProvider):
         try:
             # Remove currency symbols and convert to float
             cleaned = price_text.replace('$', '').replace('€', '').replace('£', '').strip()
+            # Handle European decimal format (comma instead of dot)
+            cleaned = cleaned.replace(',', '.')
             return float(cleaned)
         except (ValueError, AttributeError):
+            logger.debug(f"Failed to parse price: '{price_text}' -> '{cleaned}'")
             return None
 
     def _extract_price_info(self, soup: BeautifulSoup) -> Dict:

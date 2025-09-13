@@ -184,9 +184,12 @@ async def cmd_add(message: Message):
 
     # Search for games
     await message.reply("🔍 Searching for games...")
+    logger.info(f"User {user_id} searching for games with query: '{query}' in region: {user.region}")
     games = price_provider.search_games(query, user.region)
+    logger.info(f"Search returned {len(games)} games for query '{query}'")
 
     if not games:
+        logger.warning(f"No games found for query '{query}' in region {user.region}")
         await message.reply("❌ No games found. Try a different name.")
         return
 
