@@ -18,6 +18,8 @@ Create a Telegram bot where users (without registering on external sites) add Ni
 **Included:**
 - Nintendo Switch support (regions — optional in MVP: start with 1 region).
 - Bot commands: `/start`, `/help`, `/add`, `/list`, `/remove`, `/setthreshold`, `/region`, `/subscribe` (premium), `/donate`.
+- **Modern inline keyboard interface** with interactive buttons for all functions
+- **HTML message formatting** with bold headers and structured layout
 - Telegram notifications.
 - Price history storage in local database (SQLite).
 

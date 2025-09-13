@@ -27,6 +27,17 @@ Telegram bot for tracking Nintendo Switch game deals. Get notifications about pr
 | `/subscribe` | Get premium subscription |
 | `/donate` | Support the project |
 
+## 🎮 User Interface
+
+The bot features a modern **inline keyboard interface** with buttons for easy navigation:
+
+- **Main Menu**: Access all functions through interactive buttons
+- **Wishlist Management**: Add/remove games with one click
+- **Price Alerts**: Set custom price thresholds
+- **Region Settings**: Switch between US/EU/JP regions
+- **Premium Features**: Upgrade to premium for extended limits
+- **Rich Formatting**: All messages use HTML formatting with bold headers and structured layout
+
 ## 🛠 Installation and Setup
 
 ### Local Development Setup
