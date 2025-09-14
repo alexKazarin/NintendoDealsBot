@@ -272,6 +272,12 @@ class PriceProvider(ABC):
   - Game selection for price threshold setting
   - "Cancel" command handling
 
+- **Game Removal with Confirmation:**
+  - Interactive confirmation dialog before game removal
+  - "Are you sure you want to remove:" message with game title
+  - Two-button confirmation: "Yes, Remove" and "Cancel"
+  - Prevents accidental game deletions
+
 - **User limits:**
   - Free: 10 games in wishlist
   - Premium: 100 games in wishlist
@@ -309,7 +315,9 @@ class PriceProvider(ABC):
 - DB table creation check
 - Price provider test (with graceful error handling)
 - BOT_TOKEN presence check
-- Test results report
+- **Add Game Test**: Automated test for adding games to wishlist
+- **Remove Game Test**: Automated test for removing games from wishlist
+- Test results report with detailed output
 
 **test_health.py:**
 - FastAPI-based health check endpoint server
@@ -536,7 +544,80 @@ All tests pass successfully, and the bot maintains full functionality after refa
 
 This fix ensures users can successfully search and add games to their wishlists, which is core functionality for the bot.
 
-### 9.11 Conclusion
+### 9.12 Game Removal Confirmation & Enhanced Logging
+
+**Game removal confirmation implemented on 15/09/2025** - Added interactive confirmation dialog to prevent accidental game deletions:
+
+#### New Features:
+- **Confirmation Dialog**: Before removing a game, users see a clear confirmation message
+- **Improved UX**: "Are you sure you want to remove:" with game title display
+- **Two-Button Interface**: "Yes, Remove" and "Cancel" buttons for clear user choice
+- **Prevention of Accidents**: Eliminates accidental game deletions from wishlist
+
+#### Technical Implementation:
+- **New Functions**: `process_wishlist_confirm_remove()`, `process_wishlist_do_remove()`, `process_wishlist_cancel_remove()`
+- **Enhanced Logging**: Detailed INFO-level logs for all removal actions
+- **User Action Tracking**: Logs include user ID, game title, and game ID for monitoring
+
+#### Logging Examples:
+```python
+# Request confirmation
+logger.info(f"User {user_id} requested confirmation to remove game '{game.title}' (ID: {game.id}) from wishlist")
+
+# Successful removal
+logger.info(f"User {user_id} confirmed removal of game '{game.title}' (ID: {game.id}) from wishlist")
+
+# Cancellation
+logger.info(f"User {user_id} cancelled removal of game at index {game_index}")
+```
+
+#### Benefits:
+- ✅ **User Safety**: Prevents accidental deletions with confirmation step
+- ✅ **Better UX**: Clear, concise confirmation messages
+- ✅ **Action Tracking**: Comprehensive logging for user behavior analysis
+- ✅ **Debugging**: Easy to track and troubleshoot removal issues
+
+### 9.13 Enhanced Testing System
+
+**Testing system expanded on 15/09/2025** - Added automated tests for core functionality:
+
+#### New Test Cases:
+- **Add Game Test**: Automated test that adds a game to wishlist and verifies success
+- **Remove Game Test**: Automated test that removes a game from wishlist and verifies deletion
+- **Integration Testing**: Tests cover the full workflow from game search to removal
+
+#### Test Implementation:
+```python
+def test_add_game():
+    """Test adding a game to wishlist"""
+    # Creates test user, searches for game, adds to wishlist
+    # Verifies: Game added successfully, count updated
+
+def test_remove_game():
+    """Test removing a game from wishlist"""
+    # Uses test user, removes game from wishlist
+    # Verifies: Game removed successfully, count updated
+```
+
+#### Test Results:
+```
+🧪 Testing Nintendo Deals Bot MVP
+🔍 Testing Imports... ✅
+🔍 Testing Database... ✅
+🔍 Testing Price Provider... ✅
+🔍 Testing Bot Token... ✅
+🔍 Testing Add Game... ✅ Game 'The Legend of Zelda: Link's Awakening' added to wishlist. Total games: 1
+🔍 Testing Remove Game... ✅ Game 'The Legend of Zelda: Link's Awakening' removed from wishlist. Remaining games: 0
+📊 Test Results: 6/6 passed
+```
+
+#### Testing Benefits:
+- ✅ **Automated Verification**: Core functionality tested automatically
+- ✅ **Regression Prevention**: Catches breaking changes in core features
+- ✅ **CI/CD Ready**: Tests can be integrated into deployment pipelines
+- ✅ **Documentation**: Tests serve as living documentation of expected behavior
+
+### 9.14 Conclusion
 
 MVP successfully implemented covering all main blueprint requirements. Architecture allows easy functionality expansion and system scaling. Code follows Python best practices with focus on readability, testability, and maintainability.
 

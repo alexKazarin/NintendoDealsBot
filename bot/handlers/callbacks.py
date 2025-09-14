@@ -95,7 +95,7 @@ async def process_wishlist(callback_query: CallbackQuery):
 
         # Add buttons for each game
         keyboard_buttons.append([
-            InlineKeyboardButton(text=f"🗑️ Remove {i}", callback_data=f"wishlist_remove_{i-1}"),
+            InlineKeyboardButton(text=f"🗑️ Remove {i}", callback_data=f"wishlist_confirm_remove_{i-1}"),
             InlineKeyboardButton(text=f"💰 Set Price {i}", callback_data=f"wishlist_threshold_{i-1}")
         ])
 
@@ -234,8 +234,8 @@ async def process_back_to_menu(callback_query: CallbackQuery):
     await callback_query.answer()
 
 
-async def process_wishlist_remove(callback_query: CallbackQuery):
-    """Handle remove game from wishlist"""
+async def process_wishlist_confirm_remove(callback_query: CallbackQuery):
+    """Handle remove game confirmation from wishlist"""
     user_id = callback_query.from_user.id
     game_index = int(callback_query.data.split("_")[-1])
 
@@ -245,9 +245,10 @@ async def process_wishlist_remove(callback_query: CallbackQuery):
         await callback_query.answer("❌ User not found")
         return
 
-    # Get user's wishlist
+    # Get user's wishlist with game info
     wishlist_items = (
-        db.query(UserWishlist)
+        db.query(UserWishlist, Game)
+        .join(Game, UserWishlist.game_id == Game.id)
         .filter(UserWishlist.user_id == user.id)
         .all()
     )
@@ -256,12 +257,72 @@ async def process_wishlist_remove(callback_query: CallbackQuery):
         await callback_query.answer("❌ Invalid game number")
         return
 
+    wishlist_item, game = wishlist_items[game_index]
+
+    logger.info(f"User {user_id} requested confirmation to remove game '{game.title}' (ID: {game.id}) from wishlist")
+
+    # Create confirmation keyboard
+    confirm_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Yes, Remove", callback_data=f"wishlist_do_remove_{game_index}"),
+            InlineKeyboardButton(text="❌ Cancel", callback_data=f"wishlist_cancel_remove_{game_index}")
+        ]
+    ])
+
+    confirm_text = (
+        f"🗑️ <b>Are you sure you want to remove:</b>\n\n"
+        f"🎮 <b>{game.title}</b>"
+    )
+
+    await callback_query.message.edit_text(confirm_text, reply_markup=confirm_keyboard, parse_mode="HTML")
+    await callback_query.answer()
+
+
+async def process_wishlist_do_remove(callback_query: CallbackQuery):
+    """Handle actual game removal from wishlist"""
+    user_id = callback_query.from_user.id
+    game_index = int(callback_query.data.split("_")[-1])
+
+    db = next(get_db())
+    user = db.query(User).filter(User.telegram_id == user_id).first()
+    if not user:
+        await callback_query.answer("❌ User not found")
+        return
+
+    # Get user's wishlist with game info for logging
+    wishlist_items = (
+        db.query(UserWishlist, Game)
+        .join(Game, UserWishlist.game_id == Game.id)
+        .filter(UserWishlist.user_id == user.id)
+        .all()
+    )
+
+    if game_index < 0 or game_index >= len(wishlist_items):
+        await callback_query.answer("❌ Invalid game number")
+        return
+
+    wishlist_item, game = wishlist_items[game_index]
+
+    logger.info(f"User {user_id} confirmed removal of game '{game.title}' (ID: {game.id}) from wishlist")
+
     # Remove the game
-    item_to_remove = wishlist_items[game_index]
-    db.delete(item_to_remove)
+    db.delete(wishlist_item)
     db.commit()
 
     await callback_query.answer("✅ Game removed from wishlist!")
+
+    # Refresh wishlist view
+    await process_wishlist(callback_query)
+
+
+async def process_wishlist_cancel_remove(callback_query: CallbackQuery):
+    """Handle cancel game removal"""
+    user_id = callback_query.from_user.id
+    game_index = int(callback_query.data.split("_")[-1])
+
+    logger.info(f"User {user_id} cancelled removal of game at index {game_index}")
+
+    await callback_query.answer("❌ Removal cancelled")
 
     # Refresh wishlist view
     await process_wishlist(callback_query)
@@ -537,7 +598,9 @@ def register_callbacks(dp):
     dp.callback_query.register(process_premium, lambda c: c.data == "menu_premium")
     dp.callback_query.register(process_donate, lambda c: c.data == "menu_donate")
     dp.callback_query.register(process_back_to_menu, lambda c: c.data == "menu_back")
-    dp.callback_query.register(process_wishlist_remove, lambda c: c.data.startswith("wishlist_remove_"))
+    dp.callback_query.register(process_wishlist_confirm_remove, lambda c: c.data.startswith("wishlist_confirm_remove_"))
+    dp.callback_query.register(process_wishlist_do_remove, lambda c: c.data.startswith("wishlist_do_remove_"))
+    dp.callback_query.register(process_wishlist_cancel_remove, lambda c: c.data.startswith("wishlist_cancel_remove_"))
     dp.callback_query.register(process_wishlist_threshold, lambda c: c.data.startswith("wishlist_threshold_"))
     dp.callback_query.register(process_settings_region, lambda c: c.data == "settings_region")
     dp.callback_query.register(process_settings_threshold, lambda c: c.data == "settings_threshold")

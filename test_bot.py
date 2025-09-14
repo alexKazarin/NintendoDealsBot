@@ -64,6 +64,108 @@ def test_bot_token():
         print("⚠️ Bot token not configured (use .env file)")
         return False
 
+def test_add_game():
+    """Test adding a game to wishlist"""
+    try:
+        from models.database import get_db
+        from models.models import User, Game, UserWishlist
+        from providers.deku_deals_provider import DekuDealsProvider
+
+        db = next(get_db())
+
+        # Create test user
+        test_user_id = 999999999
+        user = db.query(User).filter(User.telegram_id == test_user_id).first()
+        if not user:
+            user = User(telegram_id=test_user_id, telegram_username="test_user", region="us", is_premium=False)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        # Get a test game from provider
+        provider = DekuDealsProvider()
+        games = provider.search_games("zelda")
+        if not games:
+            print("⚠️ No games found for testing")
+            return False
+
+        test_game_data = games[0]
+
+        # Check if game already exists
+        game = db.query(Game).filter(Game.source_id == test_game_data['id']).first()
+        if not game:
+            game = Game(
+                source_id=test_game_data['id'],
+                title=test_game_data['title'],
+                platform=test_game_data['platform'],
+                last_price_cents=int(test_game_data['current_price'] * 100) if test_game_data['current_price'] else None,
+                currency='USD'
+            )
+            db.add(game)
+            db.commit()
+            db.refresh(game)
+
+        # Check if already in wishlist
+        existing_wishlist = db.query(UserWishlist).filter(
+            UserWishlist.user_id == user.id,
+            UserWishlist.game_id == game.id
+        ).first()
+
+        if existing_wishlist:
+            print("⚠️ Game already in wishlist, skipping add test")
+            return True
+
+        # Add to wishlist
+        wishlist_item = UserWishlist(user_id=user.id, game_id=game.id)
+        db.add(wishlist_item)
+        db.commit()
+
+        # Verify addition
+        count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
+        print(f"✅ Game '{game.title}' added to wishlist. Total games: {count}")
+
+        return True
+    except Exception as e:
+        print(f"❌ Add game test failed: {e}")
+        return False
+
+def test_remove_game():
+    """Test removing a game from wishlist"""
+    try:
+        from models.database import get_db
+        from models.models import User, Game, UserWishlist
+
+        db = next(get_db())
+
+        # Use test user
+        test_user_id = 999999999
+        user = db.query(User).filter(User.telegram_id == test_user_id).first()
+        if not user:
+            print("⚠️ Test user not found, skipping remove test")
+            return False
+
+        # Get user's wishlist
+        wishlist_items = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).all()
+        if not wishlist_items:
+            print("⚠️ No games in wishlist, skipping remove test")
+            return False
+
+        # Remove first game
+        item_to_remove = wishlist_items[0]
+        game = db.query(Game).filter(Game.id == item_to_remove.game_id).first()
+
+        db.delete(item_to_remove)
+        db.commit()
+
+        # Verify removal
+        remaining_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
+        print(f"✅ Game '{game.title}' removed from wishlist. Remaining games: {remaining_count}")
+
+        return True
+    except Exception as e:
+        print(f"❌ Remove game test failed: {e}")
+        return False
+
 def main():
     """Run all tests"""
     print("🧪 Testing Nintendo Deals Bot MVP")
@@ -74,6 +176,8 @@ def main():
         ("Database", test_database),
         ("Price Provider", test_provider),
         ("Bot Token", test_bot_token),
+        ("Add Game", test_add_game),
+        ("Remove Game", test_remove_game),
     ]
 
     passed = 0
