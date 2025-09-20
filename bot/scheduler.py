@@ -72,29 +72,34 @@ class PriceChecker:
     async def check_game_price(self, db, game: Game):
         """Check price for a specific game and send notifications if needed"""
         try:
-            # Get current price from provider
-            current_price = self.price_provider.get_price(game.source_id)
+            # Get full game info from provider
+            game_info = self.price_provider.get_game_info(game.source_id)
 
-            if current_price is None:
-                logger.warning(f"Could not get price for game {game.title} (ID: {game.source_id})")
+            if game_info is None:
+                logger.warning(f"Could not get info for game {game.title} (ID: {game.source_id})")
                 return
 
-            current_price_cents = int(current_price * 100)
+            current_price_cents = int(game_info['current_price'] * 100) if game_info['current_price'] else None
+            original_price_cents = int(game_info['original_price'] * 100) if game_info['original_price'] else None
 
             # Update game info
             game.last_price_cents = current_price_cents
+            game.original_price_cents = original_price_cents
+            game.discount_percent = game_info['discount_percent']
             game.last_checked = datetime.utcnow()
 
             # Add to price history
-            price_history = PriceHistory(
-                game_id=game.id,
-                price_cents=current_price_cents,
-                currency='USD'
-            )
-            db.add(price_history)
+            if current_price_cents:
+                price_history = PriceHistory(
+                    game_id=game.id,
+                    price_cents=current_price_cents,
+                    currency='USD'
+                )
+                db.add(price_history)
 
             # Check if price changed and send notifications
-            await self.check_price_alerts(db, game, current_price_cents)
+            if current_price_cents:
+                await self.check_price_alerts(db, game, current_price_cents)
 
         except Exception as e:
             logger.error(f"Error checking price for game {game.title}: {e}")

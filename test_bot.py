@@ -99,6 +99,8 @@ def test_add_game():
                 title=test_game_data['title'],
                 platform=test_game_data['platform'],
                 last_price_cents=int(test_game_data['current_price'] * 100) if test_game_data['current_price'] else None,
+                original_price_cents=int(test_game_data['original_price'] * 100) if test_game_data['original_price'] else None,
+                discount_percent=test_game_data['discount_percent'],
                 currency='USD'
             )
             db.add(game)

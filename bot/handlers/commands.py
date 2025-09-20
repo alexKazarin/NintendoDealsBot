@@ -7,6 +7,7 @@ from models.database import get_db
 from models.models import User, Game, UserWishlist
 from providers.deku_deals_provider import DekuDealsProvider
 from bot.core.user_manager import UserManager
+from bot.utils.helpers import get_currency_symbol
 from .keyboards import get_main_menu_keyboard
 
 logger = logging.getLogger(__name__)
@@ -197,9 +198,22 @@ async def cmd_list(message: Message):
     keyboard_buttons = []
 
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
-        price_text = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "Price not checked"
-        threshold_text = f" (desired: ${wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
-        response += f"{i}. {game.title}\n   💰 {price_text}{threshold_text}\n\n"
+        # Format price display with current price, crossed out original price, and discount
+        currency_symbol = get_currency_symbol(user.region)
+
+        if game.last_price_cents:
+            current_price_text = f"<b>{currency_symbol}{game.last_price_cents/100:.2f}</b>"
+            if game.original_price_cents and game.original_price_cents != game.last_price_cents:
+                original_price_text = f" <s>{currency_symbol}{game.original_price_cents/100:.2f}</s>"
+            else:
+                original_price_text = ""
+            discount_text = f" <i>(-{game.discount_percent}%)</i>" if game.discount_percent else ""
+            price_display = f"{current_price_text}{original_price_text}{discount_text}"
+        else:
+            price_display = "Price not checked"
+
+        threshold_text = f" (desired: {currency_symbol}{wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
+        response += f"{i}. {game.title}\n   💰 {price_display}{threshold_text}\n\n"
 
         # Add buttons for each game
         keyboard_buttons.append([

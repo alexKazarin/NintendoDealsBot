@@ -75,6 +75,8 @@ async def handle_text_messages(message: Message):
                 title=selected_game['title'],
                 platform=selected_game['platform'],
                 last_price_cents=int(selected_game['current_price'] * 100) if selected_game['current_price'] else None,
+                original_price_cents=int(selected_game['original_price'] * 100) if selected_game['original_price'] else None,
+                discount_percent=selected_game['discount_percent'],
                 currency='USD'
             )
             db.add(game)

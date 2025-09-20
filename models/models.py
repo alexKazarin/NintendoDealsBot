@@ -29,6 +29,8 @@ class Game(Base):
     platform = Column(String, default="switch")
     last_checked = Column(TIMESTAMP)
     last_price_cents = Column(Integer)
+    original_price_cents = Column(Integer)  # Original price before discount
+    discount_percent = Column(Integer)  # Discount percentage
     currency = Column(String)
 
 class UserWishlist(Base):

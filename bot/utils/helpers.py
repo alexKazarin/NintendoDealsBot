@@ -4,13 +4,14 @@ from typing import Optional
 from models.models import Game, UserWishlist
 
 
-def format_price(cents: Optional[int], currency: str = "USD") -> str:
-    """Format price from cents to dollars"""
+def format_price(cents: Optional[int], region: str = "us") -> str:
+    """Format price from cents to dollars with regional currency"""
     if cents is None:
         return "Price not available"
 
     dollars = cents / 100
-    return f"${dollars:.2f}"
+    currency_symbol = get_currency_symbol(region)
+    return f"{currency_symbol}{dollars:.2f}"
 
 
 def validate_price_input(price_str: str) -> tuple[bool, Optional[float]]:

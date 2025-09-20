@@ -833,3 +833,62 @@ All updates maintain backward compatibility and follow the existing architectura
 - Price formatting handles edge cases (no original price, etc.)
 
 This update significantly improves the user interface and makes price information much more readable and professional-looking.
+
+### 10.9 Enhanced Wishlist Display & Regional Currency Support
+
+**Implemented on 20/09/2025** - Updated wishlist display to show full price information with regional currencies:
+
+#### Database Schema Updates:
+- **File**: `models/models.py`
+- **New Fields**: Added `original_price_cents` and `discount_percent` to Game model
+- **Purpose**: Store complete price information including original prices and discounts
+- **Migration**: SQLite schema updated with new columns
+
+#### Provider Currency Detection:
+- **File**: `providers/deku_deals_provider.py`
+- **New Method**: `_parse_price_with_currency()` detects currency from price text (€, $, ¥)
+- **Regional Headers**: Added region-specific HTTP headers for better geo-targeting
+- **Currency Mapping**: Automatic currency detection (US→USD, EU→EUR, JP→JPY)
+
+#### Wishlist Display Enhancement:
+- **Files**: `bot/handlers/commands.py`, `bot/handlers/callbacks.py`
+- **Full Price Display**: Shows current price (bold), original price (strikethrough), discount percentage
+- **Regional Currency**: Automatic currency symbol selection based on user region
+- **HTML Formatting**: Professional appearance with proper typography
+
+#### Scheduler Updates:
+- **File**: `bot/scheduler.py`
+- **Enhanced Price Checking**: Now retrieves full game info including original prices
+- **Data Persistence**: Updates all price fields during background checks
+
+#### Example Output:
+```
+📋 Your Wishlist: 2 / 5 games
+
+1. LEGO City Undercover
+   💰 **€4.79** ~~€59.99~~ *(-92%)* (desired: €5.00)
+
+2. The Legend of Zelda
+   💰 **$39.99** (desired: $40.00)
+```
+
+#### Technical Implementation:
+- **Currency Detection**: Parses currency symbols from DekuDeals HTML
+- **Regional Fallback**: Uses region-based currency when symbols not detected
+- **Data Integrity**: Maintains backward compatibility with existing data
+- **Performance**: Minimal impact on existing functionality
+
+#### Benefits:
+- ✅ **Complete Price Info**: Users see current, original prices and discounts
+- ✅ **Regional Accuracy**: Currency symbols match user's selected region
+- ✅ **Visual Consistency**: Same formatting in search and wishlist
+- ✅ **Data Richness**: Full price history tracking for future features
+- ✅ **User Experience**: Professional, informative price displays
+
+#### Testing:
+- All existing tests pass (6/6)
+- Currency detection works for EU, US, JP regions
+- Backward compatibility maintained
+- Price formatting handles all edge cases
+
+This enhancement provides users with comprehensive price information and ensures regional currency accuracy throughout the application.
