@@ -22,12 +22,12 @@ async def process_add_game(callback_query: CallbackQuery):
 
     # Check wishlist limit
     wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-    max_games = 100 if user.is_premium else 10
+    max_games = 10
 
     if wishlist_count >= max_games:
         await callback_query.message.edit_text(
             f"❌ Wishlist limit reached ({max_games}).\n\n"
-            "Get premium subscription to increase limit to 100 games.",
+            "Remove some games to add new ones.",
             reply_markup=get_main_menu_keyboard(),
             parse_mode="HTML"
         )
@@ -129,8 +129,7 @@ async def process_settings(callback_query: CallbackQuery):
     current_region = user.region.upper() if user.region else "US"
     settings_text = (
         "⚙️ <b>Settings</b>\n\n"
-        f"🌍 Current region: {current_region}\n"
-        f"💎 Premium: {'Yes' if user.is_premium else 'No'}\n\n"
+        f"🌍 Current region: {current_region}\n\n"
         "Choose what to configure:"
     )
 
@@ -147,8 +146,7 @@ async def process_help(callback_query: CallbackQuery):
         "2. Set desired prices for notifications\n"
         "3. Get automatic price drop alerts!\n\n"
         "🎯 <b>Features:</b>\n"
-        "• Track up to 10 games (free)\n"
-        "• Premium: up to 100 games\n"
+        "• Track up to 10 games\n"
         "• Real-time price monitoring\n"
         "• Multi-region support (US/EU/JP)\n\n"
         "💡 <b>Tips:</b>\n"
@@ -164,43 +162,6 @@ async def process_help(callback_query: CallbackQuery):
     await callback_query.message.edit_text(help_text, reply_markup=help_keyboard, parse_mode="HTML")
     await callback_query.answer()
 
-
-async def process_premium(callback_query: CallbackQuery):
-    """Handle premium menu button"""
-    user_id = callback_query.from_user.id
-    db = next(get_db())
-
-    user = db.query(User).filter(User.telegram_id == user_id).first()
-    if not user:
-        await callback_query.answer("❌ User not found")
-        return
-
-    if user.is_premium:
-        premium_text = (
-            "💎 <b>You have Premium!</b>\n\n"
-            "✅ Track up to 100 games\n"
-            "✅ Priority notifications\n"
-            "✅ Advanced features\n\n"
-            "Thank you for your support! 🙏"
-        )
-    else:
-        premium_text = (
-            "💎 <b>Premium Subscription</b>\n\n"
-            "🎯 <b>Benefits:</b>\n"
-            "• Track up to 100 games (vs 10 free)\n"
-            "• Priority price check notifications\n"
-            "• Advanced filtering options\n"
-            "• Support development\n\n"
-            "🚀 <b>Get Premium Now!</b>"
-        )
-
-    premium_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎉 Subscribe", callback_data="premium_subscribe")],
-        [InlineKeyboardButton(text="🔙 Back to Menu", callback_data="menu_back")]
-    ])
-
-    await callback_query.message.edit_text(premium_text, reply_markup=premium_keyboard, parse_mode="HTML")
-    await callback_query.answer()
 
 
 async def process_donate(callback_query: CallbackQuery):
@@ -472,29 +433,6 @@ async def process_region_change(callback_query: CallbackQuery):
     await process_settings(callback_query)
 
 
-async def process_premium_subscribe(callback_query: CallbackQuery):
-    """Handle premium subscription"""
-    user_id = callback_query.from_user.id
-    db = next(get_db())
-
-    user = db.query(User).filter(User.telegram_id == user_id).first()
-    if not user:
-        await callback_query.answer("❌ User not found")
-        return
-
-    if user.is_premium:
-        await callback_query.answer("✅ You already have premium!")
-        return
-
-    # Set premium (in production, this would handle payment)
-    user.is_premium = True
-    db.commit()
-
-    await callback_query.answer("🎉 Premium activated!")
-
-    # Refresh premium view
-    await process_premium(callback_query)
-
 
 async def process_donate_stars(callback_query: CallbackQuery):
     """Handle donate with stars"""
@@ -595,7 +533,6 @@ def register_callbacks(dp):
     dp.callback_query.register(process_wishlist, lambda c: c.data == "menu_wishlist")
     dp.callback_query.register(process_settings, lambda c: c.data == "menu_settings")
     dp.callback_query.register(process_help, lambda c: c.data == "menu_help")
-    dp.callback_query.register(process_premium, lambda c: c.data == "menu_premium")
     dp.callback_query.register(process_donate, lambda c: c.data == "menu_donate")
     dp.callback_query.register(process_back_to_menu, lambda c: c.data == "menu_back")
     dp.callback_query.register(process_wishlist_confirm_remove, lambda c: c.data.startswith("wishlist_confirm_remove_"))
@@ -605,6 +542,5 @@ def register_callbacks(dp):
     dp.callback_query.register(process_settings_region, lambda c: c.data == "settings_region")
     dp.callback_query.register(process_settings_threshold, lambda c: c.data == "settings_threshold")
     dp.callback_query.register(process_region_change, lambda c: c.data.startswith("region_"))
-    dp.callback_query.register(process_premium_subscribe, lambda c: c.data == "premium_subscribe")
     dp.callback_query.register(process_donate_stars, lambda c: c.data == "donate_stars")
     dp.callback_query.register(process_add_game_selection, lambda c: c.data.startswith("add_game_"))

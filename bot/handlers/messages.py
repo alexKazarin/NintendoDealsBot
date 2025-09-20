@@ -184,12 +184,12 @@ async def handle_text_messages(message: Message):
 
         # Check wishlist limit
         wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-        max_games = 100 if user.is_premium else 10
+        max_games = 10
 
         if wishlist_count >= max_games:
             await message.reply(
                 f"❌ Wishlist limit reached ({max_games}).\n"
-                "Get premium subscription to increase limit to 100 games.",
+                "Remove some games to add new ones.",
                 reply_markup=get_main_menu_keyboard()
             )
             return

@@ -129,7 +129,6 @@ NintendoDealsBot/
 - `telegram_id` - User's Telegram ID
 - `telegram_username` - User's Telegram username
 - `region` - User's region
-- `is_premium` - Premium subscription status
 
 ### games
 - `id` - Primary key

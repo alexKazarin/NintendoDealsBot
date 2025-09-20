@@ -9,7 +9,6 @@ class User(Base):
     telegram_id = Column(Integer, unique=True, nullable=False)
     telegram_username = Column(String)
     region = Column(String, default="us")
-    is_premium = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 class Game(Base):

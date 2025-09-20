@@ -77,7 +77,7 @@ def test_add_game():
         test_user_id = 999999999
         user = db.query(User).filter(User.telegram_id == test_user_id).first()
         if not user:
-            user = User(telegram_id=test_user_id, telegram_username="test_user", region="us", is_premium=False)
+            user = User(telegram_id=test_user_id, telegram_username="test_user", region="us")
             db.add(user)
             db.commit()
             db.refresh(user)

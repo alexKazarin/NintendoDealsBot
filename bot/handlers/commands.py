@@ -56,7 +56,6 @@ async def cmd_help(message: Message):
         "/remove <number> - remove game from wishlist\n"
         "/setthreshold <price> - set desired price\n"
         "/region <region> - change region (us/eu/jp)\n"
-        "/subscribe - premium subscription (up to 100 games)\n"
         "/donate - support development\n\n"
         "💡 <b>How to use:</b>\n"
         "1. Add a game using /add command\n"
@@ -92,30 +91,7 @@ async def cmd_region(message: Message):
         await message.reply("❌ User not found")
 
 
-async def cmd_subscribe(message: Message):
-    """Handle /subscribe command"""
-    user_id = message.from_user.id
 
-    db = next(get_db())
-    user = db.query(User).filter(User.telegram_id == user_id).first()
-
-    if user and user.is_premium:
-        await message.reply("✅ You already have premium subscription!")
-        return
-
-    # In MVP, we'll just set premium for demo purposes
-    # In production, this would integrate with payment system
-    if user:
-        user.is_premium = True
-        db.commit()
-        await message.reply(
-            "🎉 <b>Premium subscription activated!</b>\n\n"
-            "Now you can track up to 100 games!\n"
-            "Thank you for your support! 💎",
-            parse_mode="HTML"
-        )
-    else:
-        await message.reply("❌ User not found")
 
 
 async def cmd_donate(message: Message):
@@ -153,12 +129,12 @@ async def cmd_add(message: Message):
 
     # Check wishlist limit
     wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-    max_games = 100 if user.is_premium else 10
+    max_games = 10
 
     if wishlist_count >= max_games:
         await message.reply(
             f"❌ Wishlist limit reached ({max_games}).\n"
-            "Get premium subscription with /subscribe to increase limit to 100 games."
+            "Remove some games to add new ones."
         )
         return
 
@@ -332,7 +308,6 @@ def register_commands(dp):
     dp.message.register(cmd_menu, Command("menu"))
     dp.message.register(cmd_help, Command("help"))
     dp.message.register(cmd_region, Command("region"))
-    dp.message.register(cmd_subscribe, Command("subscribe"))
     dp.message.register(cmd_donate, Command("donate"))
     dp.message.register(cmd_add, Command("add"))
     dp.message.register(cmd_list, Command("list"))
