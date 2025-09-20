@@ -5,7 +5,7 @@ def get_main_menu_keyboard():
     """Create main menu inline keyboard"""
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🎮 Add Game", callback_data="menu_add_game"),
+            InlineKeyboardButton(text="🔍 Search Game", callback_data="menu_add_game"),
             InlineKeyboardButton(text="📋 My Wishlist", callback_data="menu_wishlist")
         ],
         [

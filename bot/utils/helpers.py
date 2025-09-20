@@ -82,3 +82,13 @@ def get_region_display_name(region: str) -> str:
         'jp': '🇯🇵 Japan'
     }
     return region_names.get(region.lower(), region.upper())
+
+
+def get_currency_symbol(region: str) -> str:
+    """Get currency symbol for region"""
+    currency_symbols = {
+        'us': '$',
+        'eu': '€',
+        'jp': '¥'
+    }
+    return currency_symbols.get(region.lower(), '$')

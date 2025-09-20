@@ -778,3 +778,58 @@ Project ready for production on free platforms (Railway, Render) and can serve h
 - ✅ **Scalability**: Efficient resource usage for growing user base
 
 All updates maintain backward compatibility and follow the existing architectural patterns. The bot is production-ready with enhanced user experience and robust technical implementation.
+
+### 10.8 UI/UX Enhancements - Price Display & Button Renaming
+
+**Implemented on 20/09/2025** - Enhanced user interface and price display formatting:
+
+#### Button Renaming:
+- **File**: `bot/handlers/keyboards.py`
+- **Change**: Renamed main menu button from "🎮 Add Game" to "🔍 Search Game"
+- **Purpose**: More intuitive button naming for better user experience
+- **Impact**: Clearer indication of search functionality
+
+#### Enhanced Price Display:
+- **File**: `bot/handlers/messages.py`
+- **New Features**:
+  - **Regional Currency Support**: Automatic currency symbol selection (€, $, ¥) based on user region
+  - **HTML Formatting**: Proper HTML rendering with `parse_mode="HTML"`
+  - **Visual Hierarchy**:
+    - Current price: `<b>€4.79</b>` (bold)
+    - Original price: `<s><span class='tg-spoiler'>€59.99</span></s>` (strikethrough, gray)
+    - Discount: `<i>(-92%)</i>` (italic with minus sign)
+
+#### Technical Implementation:
+- **Currency Function**: Added `get_currency_symbol(region)` in `bot/utils/helpers.py`
+- **HTML Parse Mode**: Added `parse_mode="HTML"` to search result messages
+- **Regional Support**: Automatic currency detection for US ($), EU (€), JP (¥)
+- **Formatting Logic**: Smart price display with conditional original price showing
+
+#### User Experience Improvements:
+- **Visual Clarity**: Prices are now clearly formatted with proper typography
+- **Regional Relevance**: Currency symbols match user's selected region
+- **Professional Look**: HTML formatting provides polished appearance
+- **Accessibility**: Clear visual hierarchy helps users quickly identify pricing
+
+#### Example Output:
+```
+🎮 Found games:
+
+1. LEGO City Undercover
+   💰 **€4.79** ~~€59.99~~ *(-92%)*
+```
+
+#### Benefits:
+- ✅ **Better UX**: Intuitive button naming and clear price formatting
+- ✅ **Regional Support**: Automatic currency symbol selection
+- ✅ **Professional Appearance**: HTML formatting for polished look
+- ✅ **User-Friendly**: Easy to read price information with visual hierarchy
+- ✅ **Backward Compatible**: No breaking changes to existing functionality
+
+#### Testing:
+- All existing tests pass (6/6)
+- HTML rendering verified in Telegram
+- Currency symbols work correctly for all regions
+- Price formatting handles edge cases (no original price, etc.)
+
+This update significantly improves the user interface and makes price information much more readable and professional-looking.

@@ -8,6 +8,7 @@ from models.models import User, Game, UserWishlist
 from providers.deku_deals_provider import DekuDealsProvider
 from .keyboards import get_main_menu_keyboard
 from .commands import search_results, user_states, price_provider
+from bot.utils.helpers import get_currency_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +135,9 @@ async def handle_text_messages(message: Message):
 
         del user_states[user_id]
 
+        currency_symbol = get_currency_symbol(user.region)
         await message.reply(
-            f"✅ Price threshold for <b>{game.title}</b> set: ${threshold_price:.2f}\n\n"
+            f"✅ Price threshold for <b>{game.title}</b> set: {currency_symbol}{threshold_price:.2f}\n\n"
             "You'll receive notification when price drops below this value!",
             parse_mode="HTML"
         )
@@ -173,8 +175,9 @@ async def handle_text_messages(message: Message):
 
         del user_states[user_id]
 
+        currency_symbol = get_currency_symbol(user.region)
         await message.reply(
-            f"✅ Price threshold for <b>{game.title}</b> set: ${price:.2f}\n\n"
+            f"✅ Price threshold for <b>{game.title}</b> set: {currency_symbol}{price:.2f}\n\n"
             "You'll receive notification when price drops below this value!",
             reply_markup=get_main_menu_keyboard()
         )
@@ -236,9 +239,21 @@ async def handle_text_messages(message: Message):
         keyboard_buttons = []
 
         for i, game in enumerate(games[:5], 1):
-            price_text = f"${game['current_price']}" if game['current_price'] else "Price not specified"
-            discount_text = f" (-{game['discount_percent']}%)" if game['discount_percent'] else ""
-            response += f"{i}. {game['title']}\n   💰 {price_text}{discount_text}\n\n"
+            # Format price display with current price, crossed out original price, and discount
+            currency_symbol = get_currency_symbol(user.region)
+
+            if game['current_price']:
+                current_price_text = f"<b>{currency_symbol}{game['current_price']:.2f}</b>"
+                if game['original_price'] and game['original_price'] != game['current_price']:
+                    original_price_text = f" <s>{currency_symbol}{game['original_price']:.2f}</s>"
+                else:
+                    original_price_text = ""
+                discount_text = f" <i>(-{game['discount_percent']}%)</i>" if game['discount_percent'] else ""
+                price_display = f"{current_price_text}{original_price_text}{discount_text}"
+            else:
+                price_display = "Price not specified"
+
+            response += f"{i}. {game['title']}\n   💰 {price_display}\n\n"
 
             keyboard_buttons.append([
                 InlineKeyboardButton(text=f"✅ Add {i}", callback_data=f"add_game_{i-1}")
@@ -253,7 +268,7 @@ async def handle_text_messages(message: Message):
         # Keep the search_game state active for continuous searching
         user_states[user_id] = {'action': 'search_game'}
 
-        await message.answer(response, reply_markup=search_keyboard)
+        await message.answer(response, reply_markup=search_keyboard, parse_mode="HTML")
         return
 
 
