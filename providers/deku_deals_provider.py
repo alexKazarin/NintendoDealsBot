@@ -24,9 +24,9 @@ class DekuDealsProvider(PriceProvider):
         logger.info(f"Searching for games with query: '{query}', region: {region}")
 
         try:
-            # Use correct parameter 'q' instead of 'term'
-            params = {'q': query}
-            url = f"{self.SEARCH_URL}?q={query}"
+            # Use correct parameter 'q' instead of 'term' and add digital filter
+            params = {'q': query, 'filter[format]': 'digital'}
+            url = f"{self.SEARCH_URL}?q={query}&filter[format]=digital"
             logger.info(f"Making request to: {url}")
 
             response = self.session.get(self.SEARCH_URL, params=params)

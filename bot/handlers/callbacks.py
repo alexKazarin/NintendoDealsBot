@@ -512,19 +512,33 @@ async def process_add_game_selection(callback_query: CallbackQuery):
     db.add(wishlist_item)
     db.commit()
 
-    # Clean up
-    if user_id in user_states:
-        del user_states[user_id]
-    if user_id in search_results:
-        del search_results[user_id]
+    # Keep search state active for continuous searching
+    # Don't clean up user_states and search_results
 
     success_text = (
         f"✅ <b>{selected_game['title']}</b> added to your wishlist!\n\n"
-        "Use the menu to set a price threshold for notifications."
+        "Continue searching or use the menu to set price thresholds."
     )
 
-    await callback_query.message.edit_text(success_text, reply_markup=get_main_menu_keyboard(), parse_mode="HTML")
-    await callback_query.answer()
+    # Show updated search results with the same keyboard
+    response = "🎮 Found games:\n\n"
+    keyboard_buttons = []
+
+    for i, game in enumerate(games[:5], 1):
+        price_text = f"${game['current_price']}" if game['current_price'] else "Price not specified"
+        discount_text = f" (-{game['discount_percent']}%)" if game['discount_percent'] else ""
+        response += f"{i}. {game['title']}\n   💰 {price_text}{discount_text}\n\n"
+
+        keyboard_buttons.append([
+            InlineKeyboardButton(text=f"✅ Add {i}", callback_data=f"add_game_{i-1}")
+        ])
+
+    keyboard_buttons.append([InlineKeyboardButton(text=" Back to Menu", callback_data="menu_back")])
+
+    search_keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+
+    await callback_query.message.edit_text(response, reply_markup=search_keyboard, parse_mode="HTML")
+    await callback_query.answer("✅ Game added! Continue searching...")
 
 
 def register_callbacks(dp):

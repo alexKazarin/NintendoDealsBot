@@ -1,4 +1,6 @@
 import logging
+import time
+import asyncio
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from models.database import get_db
@@ -8,6 +10,10 @@ from .keyboards import get_main_menu_keyboard
 from .commands import search_results, user_states, price_provider
 
 logger = logging.getLogger(__name__)
+
+# Global storage for search timestamps (user_id -> last_search_time)
+last_search_times = {}
+SEARCH_TIMEOUT = 5  # seconds
 
 
 async def handle_text_messages(message: Message):
@@ -82,13 +88,12 @@ async def handle_text_messages(message: Message):
         db.add(wishlist_item)
         db.commit()
 
-        # Clean up
-        del user_states[user_id]
-        del search_results[user_id]
+        # Keep search state active for continuous searching
+        # Don't clean up user_states and search_results
 
         await message.reply(
             f"✅ <b>{selected_game['title']}</b> added to your wishlist!\n\n"
-            "Use /setthreshold to set desired price.",
+            "Continue searching or type 'stop' to exit.",
             parse_mode="HTML"
         )
         return
@@ -178,42 +183,56 @@ async def handle_text_messages(message: Message):
     # Handle game search from menu
     elif user_id in user_states and user_states[user_id].get('action') == 'search_game':
         query = text.strip()
-        if not query or len(query) < 2:
-            await message.reply("❌ Please enter a valid game name (at least 2 characters).")
+
+        # Handle stop command
+        if query in ['stop', 'cancel', 'exit']:
+            del user_states[user_id]
+            if user_id in search_results:
+                del search_results[user_id]
+            await message.reply("❌ Search mode stopped. Use menu to continue.", reply_markup=get_main_menu_keyboard())
             return
 
-        # Check wishlist limit
-        wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-        max_games = 10
+        if not query or len(query) < 2:
+            await message.reply("❌ Please enter a valid game name (at least 2 characters).\n\nType 'stop' to exit search mode.")
+            return
 
-        if wishlist_count >= max_games:
+        # Check search timeout
+        current_time = time.time()
+        if user_id in last_search_times:
+            time_diff = current_time - last_search_times[user_id]
+            if time_diff < SEARCH_TIMEOUT:
+                remaining_time = SEARCH_TIMEOUT - time_diff
+                await message.answer(f"⏳ Waiting {remaining_time:.1f} seconds before next searching...")
+                # Wait for the remaining timeout period
+                await asyncio.sleep(remaining_time)
+
+        # Check wishlist limit
+        from bot.core.user_manager import UserManager
+        limits = UserManager.check_user_limits(user.id)
+        if not limits["can_add_more"]:
             await message.reply(
-                f"❌ Wishlist limit reached ({max_games}).\n"
-                "Remove some games to add new ones.",
+                f"❌ Wishlist limit reached ({limits['current_games']} / {limits['max_games']}).\n"
+                "Make a donation to increase your limit or remove some games.",
                 reply_markup=get_main_menu_keyboard()
             )
             return
 
+        # Update last search time
+        last_search_times[user_id] = current_time
+
         # Search for games
-        await message.reply("🔍 Searching for games...")
+        await message.answer("🔍 Searching for games...")
         logger.info(f"User {user_id} searching for games with query: '{query}' in region: {user.region}")
         games = price_provider.search_games(query, user.region)
         logger.info(f"Search returned {len(games)} games for query '{query}'")
 
         if not games:
             logger.warning(f"No games found for query '{query}' in region {user.region}")
-            search_again_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔍 Try Again", callback_data="menu_add_game")],
-                [InlineKeyboardButton(text="🔙 Back to Menu", callback_data="menu_back")]
-            ])
-            await message.reply(
-                "❌ No games found. Try a different name.",
-                reply_markup=search_again_keyboard
-            )
+            await message.answer("❌ No games found. Try a different name.\n\nType 'stop' to exit search mode.")
             return
 
         # Show search results with buttons
-        response = "🎮 <b>Found games:</b>\n\n"
+        response = "🎮 Found games:\n\n"
         keyboard_buttons = []
 
         for i, game in enumerate(games[:5], 1):
@@ -225,15 +244,16 @@ async def handle_text_messages(message: Message):
                 InlineKeyboardButton(text=f"✅ Add {i}", callback_data=f"add_game_{i-1}")
             ])
 
-        keyboard_buttons.append([InlineKeyboardButton(text="🔙 Back to Menu", callback_data="menu_back")])
+        keyboard_buttons.append([InlineKeyboardButton(text=" Back to Menu", callback_data="menu_back")])
 
         search_keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
-        # Store search results and user state
+        # Store search results and keep search state active
         search_results[user_id] = games[:5]
-        user_states[user_id] = {'action': 'select_game_inline'}
+        # Keep the search_game state active for continuous searching
+        user_states[user_id] = {'action': 'search_game'}
 
-        await message.reply(response, reply_markup=search_keyboard)
+        await message.answer(response, reply_markup=search_keyboard)
         return
 
 

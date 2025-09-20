@@ -138,30 +138,30 @@ async def cmd_add(message: Message):
         return
 
     # Search for games
-    await message.reply("🔍 Searching for games...")
+    await message.answer("🔍 Searching for games...")
     logger.info(f"User {user_id} searching for games with query: '{query}' in region: {user.region}")
     games = price_provider.search_games(query, user.region)
     logger.info(f"Search returned {len(games)} games for query '{query}'")
 
     if not games:
         logger.warning(f"No games found for query '{query}' in region {user.region}")
-        await message.reply("❌ No games found. Try a different name.")
+        await message.answer("❌ No games found. Try a different name.")
         return
 
     # Show search results
-    response = "🎮 <b>Found games:</b>\n\n"
+    response = "🎮 Found games:\n\n"
     for i, game in enumerate(games[:5], 1):  # Show top 5 results
         price_text = f"${game['current_price']}" if game['current_price'] else "Price not specified"
         discount_text = f" (-{game['discount_percent']}%)" if game['discount_percent'] else ""
         response += f"{i}. {game['title']}\n   💰 {price_text}{discount_text}\n\n"
 
-    response += "📝 <b>Select game number to add:</b>\n"
+    response += "📝 Select game number to add:\n"
     response += "Reply with number (1-5) or 'cancel' to cancel."
 
     # Store search results and user state
     search_results[user_id] = games[:5]
     user_states[user_id] = {'action': 'select_game'}
-    await message.reply(response, parse_mode="HTML")
+    await message.answer(response)
 
 
 async def cmd_list(message: Message):

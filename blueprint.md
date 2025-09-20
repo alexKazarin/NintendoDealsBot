@@ -669,3 +669,112 @@ def test_remove_game():
 MVP successfully implemented covering all main blueprint requirements. Architecture allows easy functionality expansion and system scaling. Code follows Python best practices with focus on readability, testability, and maintainability.
 
 Project ready for production on free platforms (Railway, Render) and can serve hundreds of users with current implementation.
+
+---
+
+## 10. Recent Updates and Improvements
+
+### 10.1 Digital Games Filter Implementation
+
+**Implemented on 20/09/2025** - Added digital games filter to DekuDeals search:
+
+#### Changes:
+- **File**: `providers/deku_deals_provider.py`
+- **Filter Added**: `&filter[format]=digital` to search URL
+- **Purpose**: Search only for digital Nintendo Switch games
+- **URL Format**: `https://www.dekudeals.com/search?q={query}&filter[format]=digital`
+
+#### Benefits:
+- ✅ **Targeted Search**: Only digital games appear in results
+- ✅ **Better Relevance**: Users see only downloadable content
+- ✅ **Cleaner Results**: No physical editions in search
+
+### 10.2 UI/UX Improvements
+
+**Implemented on 20/09/2025** - Enhanced user experience and interface:
+
+#### Message Flow Optimization:
+- **Removed Redundant Messages**: Eliminated duplicate "🔍 Searching for games..." messages
+- **Clean Search Flow**: Single message flow for better UX
+- **HTML Tag Removal**: Removed `<b>` tags from search results for compatibility
+
+#### Search Interface Updates:
+- **Removed "Search Again" Button**: Simplified keyboard to essential buttons only
+- **Streamlined Results**: Clean list with "Add" buttons and "Back to Menu"
+
+### 10.3 Continuous Search Mode
+
+**Implemented on 20/09/2025** - Added continuous search functionality:
+
+#### New Features:
+- **Persistent Search State**: After first search, users can input new game names directly
+- **No Button Required**: Simply type new game name to search again
+- **Exit Command**: Type "stop", "cancel", or "exit" to end search mode
+
+#### Technical Implementation:
+- **State Management**: `user_states[user_id] = {'action': 'search_game'}` persists
+- **Timeout Protection**: 5-second delay between searches to prevent spam
+- **Real-time Feedback**: Shows remaining wait time if timeout active
+
+### 10.4 Rate Limiting System
+
+**Implemented on 20/09/2025** - Added comprehensive rate limiting:
+
+#### Timeout Mechanism:
+- **5-Second Timeout**: Between consecutive searches per user
+- **Global Storage**: `last_search_times` tracks user search timestamps
+- **Smart Delay**: `asyncio.sleep()` for precise timing control
+
+#### User Experience:
+- **Visual Feedback**: `⏳ Waiting X.X seconds before next searching...`
+- **Automatic Continuation**: Search executes after timeout expires
+- **Anti-Spam Protection**: Prevents rapid successive requests
+
+### 10.5 Enhanced Error Handling and Validation
+
+**Implemented on 20/09/2025** - Improved input validation and error handling:
+
+#### Search Validation:
+- **Minimum Length**: 2+ characters required for search queries
+- **Empty Input Handling**: Clear error messages for invalid input
+- **Stop Commands**: "stop", "cancel", "exit" to terminate search mode
+
+#### Limit Checking:
+- **Dynamic Limits**: Premium users get +5 games per active donation
+- **Real-time Validation**: Checks before each search attempt
+- **Clear Messages**: Informative limit exceeded notifications
+
+### 10.6 Code Quality Improvements
+
+**Implemented on 20/09/2025** - Enhanced code maintainability:
+
+#### Architecture Updates:
+- **Async/Await**: Proper asynchronous handling with `asyncio.sleep()`
+- **Error Resilience**: Graceful handling of timeouts and network issues
+- **Memory Management**: Efficient cleanup of user states and search results
+
+#### Performance Optimizations:
+- **Reduced API Calls**: Smart caching of search timestamps
+- **Efficient State Management**: Clean up of expired user sessions
+- **Resource Optimization**: Minimal memory footprint for timeout tracking
+
+### 10.7 Summary of Improvements
+
+#### User Experience:
+- ✅ **Faster Search**: Digital-only results for better relevance
+- ✅ **Continuous Flow**: Type new names without clicking buttons
+- ✅ **Clear Feedback**: Visual timeout indicators and progress messages
+- ✅ **Simplified UI**: Clean interface with essential buttons only
+
+#### Technical Enhancements:
+- ✅ **Rate Limiting**: 5-second timeout prevents spam
+- ✅ **Better Validation**: Input sanitization and error handling
+- ✅ **Performance**: Optimized search flow and state management
+- ✅ **Maintainability**: Clean, well-documented code structure
+
+#### Business Impact:
+- ✅ **User Retention**: Improved search experience increases engagement
+- ✅ **Server Protection**: Rate limiting prevents API abuse
+- ✅ **Scalability**: Efficient resource usage for growing user base
+
+All updates maintain backward compatibility and follow the existing architectural patterns. The bot is production-ready with enhanced user experience and robust technical implementation.
