@@ -13,7 +13,6 @@ def get_main_menu_keyboard():
             InlineKeyboardButton(text="❓ Help", callback_data="menu_help")
         ],
         [
-            InlineKeyboardButton(text="💎 Premium", callback_data="menu_premium"),
             InlineKeyboardButton(text="💝 Donate", callback_data="menu_donate")
         ]
     ])

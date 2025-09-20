@@ -4,6 +4,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 from models.database import get_db
 from models.models import User, Game, UserWishlist
 from providers.deku_deals_provider import DekuDealsProvider
+from bot.core.user_manager import UserManager
 from .keyboards import get_main_menu_keyboard
 from .commands import search_results, user_states, price_provider
 
@@ -21,13 +22,11 @@ async def process_add_game(callback_query: CallbackQuery):
         return
 
     # Check wishlist limit
-    wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-    max_games = 10
-
-    if wishlist_count >= max_games:
+    limits = UserManager.check_user_limits(user.id)
+    if not limits["can_add_more"]:
         await callback_query.message.edit_text(
-            f"❌ Wishlist limit reached ({max_games}).\n\n"
-            "Remove some games to add new ones.",
+            f"❌ Wishlist limit reached ({limits['current_games']} / {limits['max_games']}).\n\n"
+            "Make a donation to increase your limit or remove some games.",
             reply_markup=get_main_menu_keyboard(),
             parse_mode="HTML"
         )
@@ -84,8 +83,11 @@ async def process_wishlist(callback_query: CallbackQuery):
         await callback_query.answer()
         return
 
+    # Get user limits
+    limits = UserManager.check_user_limits(user.id)
+
     # Create wishlist with buttons
-    response = "📋 <b>Your Wishlist:</b>\n\n"
+    response = f"📋 <b>Your Wishlist:</b> {limits['current_games']} / {limits['max_games']} games\n\n"
     keyboard_buttons = []
 
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
@@ -146,7 +148,7 @@ async def process_help(callback_query: CallbackQuery):
         "2. Set desired prices for notifications\n"
         "3. Get automatic price drop alerts!\n\n"
         "🎯 <b>Features:</b>\n"
-        "• Track up to 10 games\n"
+        "• Track up to 5 games (free), donate to increase limit\n"
         "• Real-time price monitoring\n"
         "• Multi-region support (US/EU/JP)\n\n"
         "💡 <b>Tips:</b>\n"
@@ -172,10 +174,8 @@ async def process_donate(callback_query: CallbackQuery):
         "• Keep the bot running\n"
         "• Add new features\n"
         "• Improve performance\n\n"
-        "💳 <b>Support methods:</b>\n"
-        "• Telegram Stars\n"
-        "• Cryptocurrency\n"
-        "• PayPal\n\n"
+        "💳 <b>Support method:</b>\n"
+        "• Telegram Stars (+5 games for 6 months)\n\n"
         "Thank you for your support! 🙏"
     )
 

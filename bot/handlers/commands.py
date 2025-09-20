@@ -6,6 +6,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from models.database import get_db
 from models.models import User, Game, UserWishlist
 from providers.deku_deals_provider import DekuDealsProvider
+from bot.core.user_manager import UserManager
 from .keyboards import get_main_menu_keyboard
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ async def cmd_help(message: Message):
         "1. Add a game using /add command\n"
         "2. Set desired price with /setthreshold\n"
         "3. Get discount notifications!\n\n"
-        "🔗 Free: up to 10 games in wishlist"
+        "🔗 Free: up to 5 games in wishlist\n💎 Donate to increase limit (+5 games for 6 months)"
     )
 
     await message.reply(help_text, parse_mode="HTML")
@@ -128,13 +129,11 @@ async def cmd_add(message: Message):
         return
 
     # Check wishlist limit
-    wishlist_count = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
-    max_games = 10
-
-    if wishlist_count >= max_games:
+    limits = UserManager.check_user_limits(user.id)
+    if not limits["can_add_more"]:
         await message.reply(
-            f"❌ Wishlist limit reached ({max_games}).\n"
-            "Remove some games to add new ones."
+            f"❌ Wishlist limit reached ({limits['current_games']} / {limits['max_games']}).\n"
+            "Make a donation to increase your limit or remove some games."
         )
         return
 
@@ -190,8 +189,11 @@ async def cmd_list(message: Message):
         )
         return
 
+    # Get user limits
+    limits = UserManager.check_user_limits(user.id)
+
     # Create wishlist with buttons
-    response = "📋 <b>Your Wishlist:</b>\n\n"
+    response = f"📋 <b>Your Wishlist:</b> {limits['current_games']} / {limits['max_games']} games\n\n"
     keyboard_buttons = []
 
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):

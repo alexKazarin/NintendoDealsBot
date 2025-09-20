@@ -33,6 +33,7 @@ price_provider = DekuDealsProvider()
 
 from .handlers.keyboards import get_main_menu_keyboard
 from .handlers import commands, callbacks, messages
+from bot.core.user_manager import UserManager
 
 # Register command handlers
 commands.register_commands(dp)
@@ -45,6 +46,35 @@ messages.register_messages(dp)
 
 # Import shared state from commands module
 from .handlers.commands import search_results, user_states
+
+# Payment handlers
+@dp.pre_checkout_query()
+async def process_pre_checkout_query(pre_checkout_query):
+    """Handle pre-checkout query for payments"""
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+@dp.message(lambda message: message.successful_payment is not None)
+async def process_successful_payment(message):
+    """Handle successful payment"""
+    user_id = message.from_user.id
+    payment = message.successful_payment
+
+    logger.info(f"User {user_id} made payment: {payment.total_amount} {payment.currency}")
+
+    # Add premium purchase for the user (+5 games for 6 months)
+    success = UserManager.add_premium_purchase(user_id, bonus_games=5, months=6)
+
+    if success:
+        await message.reply(
+            "🎉 <b>Thank you for your donation!</b>\n\n"
+            "✅ Your game limit has been increased by 5 games for 6 months.\n\n"
+            "You can now track more games in your wishlist!",
+            parse_mode="HTML"
+        )
+        logger.info(f"Successfully added premium purchase for user {user_id}")
+    else:
+        await message.reply("❌ Error processing your donation. Please contact support.")
+        logger.error(f"Failed to add premium purchase for user {user_id}")
 
 
 

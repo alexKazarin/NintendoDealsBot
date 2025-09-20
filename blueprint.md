@@ -10,7 +10,7 @@ Create a Telegram bot where users (without registering on external sites) add Ni
 - Periodically check current prices and history (via DekuDeals API/public pages) to track changes.
 - Send personal notifications in Telegram when conditions are met (price drop, discount ≥ threshold, price ≤ specified).
 - Store price history for each tracked game (minimum — last N points).
-- Simple monetization model (free tracking limit — 10 games; "premium" option to increase limit).
+- Simple monetization model (free tracking limit — 5 games; donate to increase limit by +5 games for 6 months).
 
 ---
 
@@ -129,6 +129,15 @@ CREATE TABLE price_history (
   price_cents INTEGER,
   currency TEXT,
   recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- user_premium_purchases (premium purchases tracking)
+CREATE TABLE user_premium_purchases (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP,
+  bonus_games INTEGER DEFAULT 5
 );
 
 -- notifications (notification log)
@@ -279,8 +288,9 @@ class PriceProvider(ABC):
   - Prevents accidental game deletions
 
 - **User limits:**
-  - Free: 10 games in wishlist
-  - Premium: 100 games in wishlist
+  - Free: 5 games in wishlist
+  - Premium: +5 games for 6 months per donation (Telegram Stars)
+  - Dynamic limit calculation based on active purchases
   - Limit check before adding games
 
 - **User states:**
@@ -617,7 +627,44 @@ def test_remove_game():
 - ✅ **CI/CD Ready**: Tests can be integrated into deployment pipelines
 - ✅ **Documentation**: Tests serve as living documentation of expected behavior
 
-### 9.14 Conclusion
+### 9.14 Donation System Implementation
+
+**Donation system implemented on 20/09/2025** - Added Telegram Stars payment integration with dynamic game limits:
+
+#### New Features:
+- **Telegram Stars Integration**: Users can donate via Telegram Stars to increase game limits
+- **Dynamic Limits**: Base 5 games + 5 games per active donation (6 months validity)
+- **Purchase Tracking**: New `user_premium_purchases` table stores all donation history
+- **Automatic Limit Updates**: Limits recalculated based on active purchases
+- **Payment Processing**: Full pre_checkout_query and successful_payment handling
+
+#### Technical Implementation:
+- **New Table**: `user_premium_purchases` with user_id, purchased_at, expires_at, bonus_games
+- **Payment Handlers**: `pre_checkout_query` and `successful_payment` in bot.py
+- **Limit Calculation**: `UserManager.check_user_limits()` sums active bonus_games
+- **UI Updates**: Donation menu shows "+5 games for 6 months" benefit
+- **Logging**: All payments logged to console and stored in database
+
+#### Donation Flow:
+1. User clicks "💝 Donate" → sees Telegram Stars option
+2. Clicks "⭐ Send Stars" → Telegram payment dialog opens
+3. After successful payment → bot adds +5 games for 6 months
+4. User receives confirmation message
+5. Game limit increases automatically
+
+#### Benefits:
+- ✅ **Simple Monetization**: One-click donations via Telegram Stars
+- ✅ **Flexible Limits**: Users can donate multiple times for more games
+- ✅ **Time-Based**: Premium expires after 6 months, encouraging repeat donations
+- ✅ **Transparent**: Clear indication of what user gets (+5 games for 6 months)
+- ✅ **Secure**: All payments handled by Telegram, no sensitive data stored
+
+#### Payment Limitations:
+- **Local Development**: Payments only work with webhooks (not polling)
+- **Production Setup**: Requires webhook deployment on Railway/Render
+- **BotFather Config**: Payments must be enabled in BotFather settings
+
+### 9.15 Conclusion
 
 MVP successfully implemented covering all main blueprint requirements. Architecture allows easy functionality expansion and system scaling. Code follows Python best practices with focus on readability, testability, and maintainability.
 

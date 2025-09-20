@@ -11,6 +11,15 @@ class User(Base):
     region = Column(String, default="us")
     created_at = Column(TIMESTAMP, server_default=func.now())
 
+class UserPremiumPurchase(Base):
+    __tablename__ = "user_premium_purchases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    purchased_at = Column(TIMESTAMP, server_default=func.now())
+    expires_at = Column(TIMESTAMP, nullable=False)
+    bonus_games = Column(Integer, default=5)
+
 class Game(Base):
     __tablename__ = "games"
 
