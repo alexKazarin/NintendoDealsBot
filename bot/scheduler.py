@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 
 from models.database import get_db, SessionLocal
 from models.models import User, Game, UserWishlist, PriceHistory, Notification
@@ -24,12 +25,12 @@ class PriceChecker:
 
     def start(self):
         """Start the price checking scheduler"""
-        # Check prices every 30 minutes
+        # Check prices twice a day at 9:00 and 21:00 UTC
         self.scheduler.add_job(
             self.check_all_prices,
-            trigger=IntervalTrigger(minutes=30),
+            trigger=CronTrigger(hour=[9, 21]),
             id='price_checker',
-            name='Check game prices',
+            name='Check game prices twice daily',
             replace_existing=True
         )
 
