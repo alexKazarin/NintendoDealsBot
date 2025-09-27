@@ -43,7 +43,9 @@ class GameManager:
                 title=game_data['title'],
                 platform=game_data['platform'],
                 last_price_cents=int(game_data['current_price'] * 100) if game_data['current_price'] else None,
-                currency='USD'
+                original_price_cents=int(game_data['original_price'] * 100) if game_data['original_price'] else None,
+                discount_percent=game_data['discount_percent'],
+                currency=game_data.get('currency', 'USD')
             )
             db.add(game)
             db.commit()
@@ -82,6 +84,8 @@ class GameManager:
 
     def get_user_wishlist(self, user_id: int) -> List[Dict]:
         """Get user's wishlist with game details"""
+        from bot.utils.helpers import get_currency_symbol
+
         db = next(get_db())
 
         wishlist_items = (
@@ -93,8 +97,9 @@ class GameManager:
 
         result = []
         for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
-            price_text = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "Price not checked"
-            threshold_text = f" (desired: ${wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
+            currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
+            price_text = f"{currency_symbol}{game.last_price_cents/100:.2f}" if game.last_price_cents else "Price not checked"
+            threshold_text = f" (desired: {currency_symbol}{wishlist_item.desired_price_cents/100:.2f})" if wishlist_item.desired_price_cents else ""
 
             result.append({
                 "index": i,

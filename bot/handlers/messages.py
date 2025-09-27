@@ -77,7 +77,7 @@ async def handle_text_messages(message: Message):
                 last_price_cents=int(selected_game['current_price'] * 100) if selected_game['current_price'] else None,
                 original_price_cents=int(selected_game['original_price'] * 100) if selected_game['original_price'] else None,
                 discount_percent=selected_game['discount_percent'],
-                currency='USD'
+                currency=selected_game.get('currency', 'USD')
             )
             db.add(game)
             db.commit()
@@ -137,7 +137,8 @@ async def handle_text_messages(message: Message):
 
         del user_states[user_id]
 
-        currency_symbol = get_currency_symbol(user.region)
+        # Use game's currency for confirmation
+        currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
         await message.reply(
             f"✅ Price threshold for <b>{game.title}</b> set: {currency_symbol}{threshold_price:.2f}\n\n"
             "You'll receive notification when price drops below this value!",
@@ -177,7 +178,8 @@ async def handle_text_messages(message: Message):
 
         del user_states[user_id]
 
-        currency_symbol = get_currency_symbol(user.region)
+        # Use game's currency for confirmation
+        currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
         await message.reply(
             f"✅ Price threshold for <b>{game.title}</b> set: {currency_symbol}{price:.2f}\n\n"
             "You'll receive notification when price drops below this value!",

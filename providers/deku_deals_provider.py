@@ -19,6 +19,15 @@ class DekuDealsProvider(PriceProvider):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
 
+    def _get_currency_for_region(self, region: str) -> str:
+        """Get currency code for region"""
+        currency_map = {
+            'us': 'USD',
+            'eu': 'EUR',
+            'jp': 'JPY'
+        }
+        return currency_map.get(region.lower(), 'USD')
+
     def search_games(self, query: str, region: str = "us") -> List[Dict]:
         """Search for games on DekuDeals"""
         logger.info(f"Searching for games with query: '{query}', region: {region}")
@@ -29,7 +38,14 @@ class DekuDealsProvider(PriceProvider):
             url = f"{self.SEARCH_URL}?q={query}&filter[format]=digital"
             logger.info(f"Making request to: {url}")
 
-            response = self.session.get(self.SEARCH_URL, params=params)
+            # Add region-specific headers
+            headers = self.session.headers.copy()
+            if region.lower() == 'eu':
+                headers['Accept-Language'] = 'en-GB,en;q=0.9'
+            elif region.lower() == 'jp':
+                headers['Accept-Language'] = 'ja,en;q=0.9'
+
+            response = self.session.get(self.SEARCH_URL, params=params, headers=headers)
             logger.info(f"Response status code: {response.status_code}")
 
             response.raise_for_status()
@@ -50,6 +66,7 @@ class DekuDealsProvider(PriceProvider):
             # Filter games by query since search redirects to main page
             filtered_games = []
             query_lower = query.lower()
+            currency = self._get_currency_for_region(region)
 
             for container in game_containers[:50]:  # Check more games to find matches
                 title_elem = container.find('a', class_='main-link')
@@ -110,6 +127,7 @@ class DekuDealsProvider(PriceProvider):
                     'current_price': current_price,
                     'original_price': original_price,
                     'discount_percent': discount,
+                    'currency': currency,
                     'url': f"{self.BASE_URL}{game_url}",
                     'platform': 'switch'  # Assuming Nintendo Switch for MVP
                 })
@@ -125,11 +143,19 @@ class DekuDealsProvider(PriceProvider):
             logger.error(f"Error searching games: {e}", exc_info=True)
             return []
 
-    def get_game_info(self, game_id: str) -> Optional[Dict]:
+    def get_game_info(self, game_id: str, region: str = "us") -> Optional[Dict]:
         """Get detailed game information"""
         try:
             url = f"{self.GAME_URL}/{game_id}"
-            response = self.session.get(url)
+
+            # Add region-specific headers
+            headers = self.session.headers.copy()
+            if region.lower() == 'eu':
+                headers['Accept-Language'] = 'en-GB,en;q=0.9'
+            elif region.lower() == 'jp':
+                headers['Accept-Language'] = 'ja,en;q=0.9'
+
+            response = self.session.get(url, headers=headers)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -140,6 +166,7 @@ class DekuDealsProvider(PriceProvider):
 
             # Extract prices
             price_info = self._extract_price_info(soup)
+            currency = self._get_currency_for_region(region)
 
             return {
                 'id': game_id,
@@ -148,7 +175,7 @@ class DekuDealsProvider(PriceProvider):
                 'current_price': price_info['current'],
                 'original_price': price_info['original'],
                 'discount_percent': price_info['discount'],
-                'currency': 'USD',
+                'currency': currency,
                 'url': url
             }
 

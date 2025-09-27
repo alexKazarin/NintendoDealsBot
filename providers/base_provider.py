@@ -5,7 +5,7 @@ class PriceProvider(ABC):
     """Abstract base class for price providers"""
 
     @abstractmethod
-    def get_game_info(self, game_id: str) -> Optional[Dict]:
+    def get_game_info(self, game_id: str, region: str = "us") -> Optional[Dict]:
         """Get game information including title, platform, current price, discount"""
         pass
 

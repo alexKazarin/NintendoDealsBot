@@ -162,7 +162,7 @@ async def process_help(callback_query: CallbackQuery):
         "2. Set desired prices for notifications\n"
         "3. Get automatic price drop alerts!\n\n"
         "🎯 <b>Features:</b>\n"
-        "• Track up to 5 games (free), donate to increase limit\n"
+        "• Track up to 20 games (free), donate to increase limit\n"
         "• Real-time price monitoring\n"
         "• Multi-region support (US/EU/JP)\n\n"
         "💡 <b>Tips:</b>\n"
@@ -474,6 +474,18 @@ async def process_add_game_selection(callback_query: CallbackQuery):
     user = db.query(User).filter(User.telegram_id == user_id).first()
     if not user:
         await callback_query.answer("❌ User not found")
+        return
+
+    # Check wishlist limit before adding
+    limits = UserManager.check_user_limits(user.id)
+    if not limits["can_add_more"]:
+        await callback_query.message.edit_text(
+            f"❌ Wishlist limit reached ({limits['current_games']} / {limits['max_games']}).\n\n"
+            "Make a donation to increase your limit or remove some games.",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode="HTML"
+        )
+        await callback_query.answer()
         return
 
     # Get search results

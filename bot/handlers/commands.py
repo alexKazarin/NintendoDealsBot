@@ -63,7 +63,7 @@ async def cmd_help(message: Message):
         "1. Add a game using /add command\n"
         "2. Set desired price with /setthreshold\n"
         "3. Get discount notifications!\n\n"
-        "🔗 Free: up to 5 games in wishlist\n💎 Donate to increase limit (+5 games for 6 months)"
+        "🔗 Free: up to 20 games in wishlist\n💎 Donate to increase limit (+5 games for 6 months)"
     )
 
     await message.reply(help_text, parse_mode="HTML")
@@ -152,7 +152,8 @@ async def cmd_add(message: Message):
     # Show search results
     response = "🎮 Found games:\n\n"
     for i, game in enumerate(games[:5], 1):  # Show top 5 results
-        price_text = f"${game['current_price']}" if game['current_price'] else "Price not specified"
+        currency_symbol = get_currency_symbol(user.region)
+        price_text = f"{currency_symbol}{game['current_price']:.2f}" if game['current_price'] else "Price not specified"
         discount_text = f" (-{game['discount_percent']}%)" if game['discount_percent'] else ""
         response += f"{i}. {game['title']}\n   💰 {price_text}{discount_text}\n\n"
 
@@ -199,7 +200,8 @@ async def cmd_list(message: Message):
 
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
         # Format price display with current price, crossed out original price, and discount
-        currency_symbol = get_currency_symbol(user.region)
+        # Use game's currency instead of user's region
+        currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
 
         if game.last_price_cents:
             current_price_text = f"<b>{currency_symbol}{game.last_price_cents/100:.2f}</b>"
@@ -307,10 +309,12 @@ async def cmd_setthreshold(message: Message):
     # Show games to choose from
     response = "🎯 <b>Select game to set price threshold:</b>\n\n"
     for i, (wishlist_item, game) in enumerate(wishlist_items, 1):
-        current_price = f"${game.last_price_cents/100:.2f}" if game.last_price_cents else "not checked"
+        currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
+        current_price = f"{currency_symbol}{game.last_price_cents/100:.2f}" if game.last_price_cents else "not checked"
         response += f"{i}. {game.title} (current: {current_price})\n"
 
-    response += f"\n💰 Desired price: ${price:.2f}\n"
+    currency_symbol = get_currency_symbol(user.region)  # For the desired price input
+    response += f"\n💰 Desired price: {currency_symbol}{price:.2f}\n"
     response += "Reply with game number or 'cancel'."
 
     # Store user state

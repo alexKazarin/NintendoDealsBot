@@ -6,6 +6,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from models.database import get_db, SessionLocal
 from models.models import User, Game, UserWishlist, PriceHistory, Notification
 from providers.deku_deals_provider import DekuDealsProvider
+from bot.utils.helpers import get_currency_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +73,12 @@ class PriceChecker:
     async def check_game_price(self, db, game: Game):
         """Check price for a specific game and send notifications if needed"""
         try:
+            # Determine region from game's currency (reverse lookup)
+            region_map = {'USD': 'us', 'EUR': 'eu', 'JPY': 'jp'}
+            region = region_map.get(game.currency, 'us')
+
             # Get full game info from provider
-            game_info = self.price_provider.get_game_info(game.source_id)
+            game_info = self.price_provider.get_game_info(game.source_id, region)
 
             if game_info is None:
                 logger.warning(f"Could not get info for game {game.title} (ID: {game.source_id})")
@@ -86,6 +91,7 @@ class PriceChecker:
             game.last_price_cents = current_price_cents
             game.original_price_cents = original_price_cents
             game.discount_percent = game_info['discount_percent']
+            game.currency = game_info['currency']
             game.last_checked = datetime.utcnow()
 
             # Add to price history
@@ -93,7 +99,7 @@ class PriceChecker:
                 price_history = PriceHistory(
                     game_id=game.id,
                     price_cents=current_price_cents,
-                    currency='USD'
+                    currency=game_info['currency']
                 )
                 db.add(price_history)
 
@@ -128,7 +134,8 @@ class PriceChecker:
                  current_price_cents < wishlist_item.last_notified_price_cents)):
 
                 should_notify = True
-                notification_reason = f"Price dropped to ${current_price_cents/100:.2f} (desired: ${wishlist_item.desired_price_cents/100:.2f})"
+                currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
+                notification_reason = f"Price dropped to {currency_symbol}{current_price_cents/100:.2f} (desired: {currency_symbol}{wishlist_item.desired_price_cents/100:.2f})"
 
             # Check minimum discount (if implemented)
             # This could be added later based on game history
@@ -155,10 +162,14 @@ class PriceChecker:
             return
 
         try:
+            # Use game's currency for price display
+            from bot.utils.helpers import get_currency_symbol
+            currency_symbol = get_currency_symbol(game.currency.lower() if game.currency else 'usd')
+
             message_text = (
                 f"🎉 <b>Game discount!</b>\n\n"
                 f"🎮 <b>{game.title}</b>\n"
-                f"💰 New price: ${price_cents/100:.2f}\n"
+                f"💰 New price: {currency_symbol}{price_cents/100:.2f}\n"
                 f"📊 {reason}\n\n"
                 f"🔗 Check on DekuDeals: https://www.dekudeals.com/items/{game.source_id}"
             )

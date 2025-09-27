@@ -35,7 +35,7 @@ class UserManager:
         db = next(get_db())
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            return {"max_games": 5, "current_games": 0, "can_add_more": True}
+            return {"max_games": 20, "current_games": 0, "can_add_more": True}
 
         from models.models import UserWishlist
         current_games = db.query(UserWishlist).filter(UserWishlist.user_id == user.id).count()
@@ -48,7 +48,7 @@ class UserManager:
         ).all()
 
         bonus_games = sum(purchase.bonus_games for purchase in active_purchases)
-        max_games = 5 + bonus_games
+        max_games = 20 + bonus_games
 
         return {
             "max_games": max_games,
